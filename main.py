@@ -111,3 +111,24 @@ def display_images(fname, dogs_imgs=None, cats_imgs=None, rows=3, offset=0):
     plt.savefig(fname)
 
 display_images("figure_1.png", dogs_imgs, cats_imgs, rows=3)
+
+# Dataset's configuration
+idx = int(BUFFER_SIZE*.8)
+
+train_dogs = tf.data.Dataset.list_files(train_dogs_files[:idx], shuffle=False)
+train_cats = tf.data.Dataset.list_files(train_cats_files[:idx], shuffle=False)
+
+test_dogs = tf.data.Dataset.list_files(train_dogs_files[idx:], shuffle=False)
+test_cats = tf.data.Dataset.list_files(train_cats_files[idx:], shuffle=False)
+
+train_dataset = tf.data.Dataset.zip((train_dogs, train_cats))
+train_dataset = train_dataset.shuffle(buffer_size=idx, reshuffle_each_iteration=True)
+train_dataset = train_dataset.map(load_images, num_parallel_calls=tf.data.AUTOTUNE)
+train_dataset = train_dataset.batch(BATCH_SIZE)
+
+test_dataset = tf.data.Dataset.zip((test_dogs, test_cats))
+test_dataset = test_dataset.map(load_images, num_parallel_calls=tf.data.AUTOTUNE)
+test_dataset = test_dataset.batch(BATCH_SIZE)
+
+sample_dog, sample_cat = next(iter(train_dataset))
+print(f"Sample image shape {sample_dog[0].shape}")
