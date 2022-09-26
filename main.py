@@ -132,3 +132,46 @@ test_dataset = test_dataset.batch(BATCH_SIZE)
 
 sample_dog, sample_cat = next(iter(train_dataset))
 print(f"Sample image shape {sample_dog[0].shape}")
+
+# Pix2Pix Model
+OUTPUT_CHANNELS = 3
+
+generator_g = pix2pix.unet_generator(OUTPUT_CHANNELS, norm_type='instancenorm')
+generator_f = pix2pix.unet_generator(OUTPUT_CHANNELS, norm_type='instancenorm')
+
+discriminator_x = pix2pix.discriminator(norm_type='instancenorm', target=False)
+discriminator_y = pix2pix.discriminator(norm_type='instancenorm', target=False)
+
+generator_g.summary()
+generator_f.summary()
+discriminator_x.summary()
+discriminator_y.summary()
+
+to_cat = generator_g(sample_dog)
+to_dog = generator_f(sample_cat)
+plt.figure(figsize=(8, 8))
+contrast = 8
+
+imgs = [sample_dog, to_cat, sample_cat, to_dog]
+title = ['Horse', 'To Zebra', 'Zebra', 'To Horse']
+
+for i in range(len(imgs)):
+  plt.subplot(2, 2, i+1)
+  plt.title(title[i])
+  if i % 2 == 0:
+    plt.imshow(imgs[i][0] * 0.5 + 0.5)
+  else:
+    plt.imshow(imgs[i][0] * 0.5 * contrast + 0.5)
+plt.savefig("figure_2.png")
+
+plt.figure(figsize=(8, 8))
+
+plt.subplot(121)
+plt.title('Is a real zebra?')
+plt.imshow(discriminator_y(sample_cat)[0, ..., -1], cmap='RdBu_r')
+
+plt.subplot(122)
+plt.title('Is a real horse?')
+plt.imshow(discriminator_x(sample_dog)[0, ..., -1], cmap='RdBu_r')
+
+plt.savefig("figure_3.png")
