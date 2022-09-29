@@ -548,7 +548,7 @@ def generate_images(model, vae, test_input, fname):
   plt.figure(figsize=(12, 12))
 
   display_list = [test_input[0], decoded[0], prediction[0]]
-  title = ['Input Image', 'Predicted Image']
+  title = ['Input Image', 'VAE Image', 'Predicted Image']
 
   for i in range(3):
     plt.subplot(1, 3, i+1)
