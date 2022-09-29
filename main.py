@@ -541,15 +541,16 @@ if ckpt_manager.latest_checkpoint:
 # Training
 EPOCHS = 10
 
-def generate_images(model, test_input, fname):
-  prediction = model(test_input)
+def generate_images(model, vae, test_input, fname):
+  decoded = vae(test_input)
+  prediction = model(decoded)
 
   plt.figure(figsize=(12, 12))
 
-  display_list = [test_input[0], prediction[0]]
+  display_list = [test_input[0], decoded[0], prediction[0]]
   title = ['Input Image', 'Predicted Image']
 
-  for i in range(2):
+  for i in range(3):
     plt.subplot(1, 2, i+1)
     plt.title(title[i])
     # getting the pixel values between [0, 1] to plot it.
