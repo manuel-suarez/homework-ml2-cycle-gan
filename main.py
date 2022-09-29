@@ -328,7 +328,7 @@ INPUT_DIM     = (256,256,OUTPUT_CHANNELS)
 # Dimensión del espacio latente
 LATENT_DIM    = 150
 BATCH_SIZE    = 10
-R_LOSS_FACTOR = 100000  # 10000
+R_LOSS_FACTOR = 10000  # 10000
 EPOCHS        = 50
 INITIAL_EPOCH = 0
 use_batch_norm  = True
@@ -475,7 +475,7 @@ LAMBDA = 10
 # CycleGAN
 loss_obj = tf.keras.losses.BinaryCrossentropy(from_logits=True)
 # VAE
-mae      = tf.keras.losses.MeanAbsoluteError()
+loss_mae = tf.keras.losses.MeanAbsoluteError()
 
 def discriminator_loss(real, generated):
   real_loss = loss_obj(tf.ones_like(real), real)
@@ -499,7 +499,7 @@ def identity_loss(real_image, same_image):
   return LAMBDA * 0.5 * loss
 
 def vae_loss(image, prediction, z_mean, z_log_var, r_loss_factor):
-  r_loss     = r_loss_factor * mae(image, prediction)
+  r_loss     = r_loss_factor * loss_mae(image, prediction)
   kl_loss    = -0.5 * (1 + z_log_var - tf.square(z_mean) - tf.exp(z_log_var))
   kl_loss    = tf.reduce_mean(tf.reduce_sum(kl_loss, axis=1))
   return r_loss + kl_loss # Total loss
@@ -512,8 +512,8 @@ discriminator_x_optimizer = tf.keras.optimizers.Adam(2e-4, beta_1=0.5)
 discriminator_y_optimizer = tf.keras.optimizers.Adam(2e-4, beta_1=0.5)
 
 # VAE
-vae_f_optimizer = keras.optimizers.Adam()
-vae_g_optimizer = keras.optimizers.Adam()
+vae_f_optimizer = keras.optimizers.Adam(2e-4, beta_1=0.5)
+vae_g_optimizer = keras.optimizers.Adam(2e-4, beta_1=0.5)
 
 # Checkpoints
 checkpoint_path = "./checkpoints/train"
@@ -664,7 +664,8 @@ for epoch in range(EPOCHS):
 
   # Using a consistent image (sample_horse) so that the progress of the model
   # is clearly visible.
-  generate_images(generator_g, sample_dog, f"generate_{epoch}.png")
+  generate_images(generator_g, sample_dog, f"generate_cat_{epoch}.png")
+  generate_images(generator_f, sample_cat, f"generate_dog_{epoch}.png")
 
   if (epoch + 1) % 5 == 0:
     ckpt_save_path = ckpt_manager.save()
