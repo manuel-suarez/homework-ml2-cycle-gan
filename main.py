@@ -453,15 +453,15 @@ class VAE(keras.Model):
     def call(self, inputs, training=False):
         '''
         '''
-        tmp1, tmp2 = self.encoder_model.use_Dropout, self.decoder_model.use_Dropout
+        tmp1, tmp2 = self.encoder_model.use_dropout, self.decoder_model.use_dropout
         if not training:
-            self.encoder_model.use_Dropout, self.decoder_model.use_Dropout = False, False
+            self.encoder_model.use_dropout, self.decoder_model.use_dropout = False, False
 
         x = self.encoder_model(inputs)
         z, z_mean, z_log_var = self.sampler_model(x)
         pred = self.decoder_model(z)
 
-        self.encoder_model.use_Dropout, self.decoder_model.use_Dropout = tmp1, tmp2
+        self.encoder_model.use_dropout, self.decoder_model.use_dropout = tmp1, tmp2
         return pred
 
 vae_g = VAE(r_loss_factor=R_LOSS_FACTOR, summary=False)
