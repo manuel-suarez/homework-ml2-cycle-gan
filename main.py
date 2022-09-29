@@ -551,7 +551,7 @@ def generate_images(model, vae, test_input, fname):
   title = ['Input Image', 'Predicted Image']
 
   for i in range(3):
-    plt.subplot(1, 2, i+1)
+    plt.subplot(1, 3, i+1)
     plt.title(title[i])
     # getting the pixel values between [0, 1] to plot it.
     plt.imshow(display_list[i] * 0.5 + 0.5)
@@ -665,8 +665,8 @@ for epoch in range(EPOCHS):
 
   # Using a consistent image (sample_horse) so that the progress of the model
   # is clearly visible.
-  generate_images(generator_g, sample_dog, f"generate_cat_{epoch}.png")
-  generate_images(generator_f, sample_cat, f"generate_dog_{epoch}.png")
+  generate_images(generator_g, vae_g, sample_dog, f"generate_cat_{epoch}.png")
+  generate_images(generator_f, vae_f, sample_cat, f"generate_dog_{epoch}.png")
 
   if (epoch + 1) % 5 == 0:
     ckpt_save_path = ckpt_manager.save()
