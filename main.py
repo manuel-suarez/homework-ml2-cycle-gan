@@ -640,7 +640,7 @@ terminate = TerminateOnNaN()
 callbacks = [checkpoint, terminate]
 
 # Training
-EPOCHS = 1
+EPOCHS = 50
 
 # Train
 train_dataset = tf.data.Dataset.zip((train_dogs, train_cats))
@@ -672,4 +672,7 @@ def generate_images(model, test_input, figname):
 
 # Run the trained model on the test dataset
 for idx, inp in enumerate(train_dogs.take(5)):
-  generate_images(cyclegan.generator_g, inp, f"testimage_{idx+1}")
+  generate_images(cyclegan.generator_g, inp, f"testdogimage_{idx+1}")
+
+for idx, inp in enumerate(train_cats.take(5)):
+  generate_images(cyclegan.generator_f, inp, f"testcatimage_{idx+1}")
