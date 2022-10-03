@@ -13,6 +13,9 @@ AUTOTUNE = tf.data.AUTOTUNE
 
 print(tf.__version__)
 
+# Execution strategy
+mirrored_strategy = tf.distribute.MirroredStrategy()
+
 # Input pipeline
 DATA_FOLDER   = '/home/est_posgrado_manuel.suarez/data/dogs-vs-cats/train'
 dog_files = np.array(glob(os.path.join(DATA_FOLDER, 'dog.*.jpg')))
@@ -595,7 +598,8 @@ class CycleGAN(keras.Model):
             "disc_y_loss": self.disc_y_loss_tracker.result()
         }
 
-cyclegan = CycleGAN(p_lambda=LAMBDA, r_loss_factor=R_LOSS_FACTOR)
+with mirrored_strategy.scope():
+    cyclegan = CycleGAN(p_lambda=LAMBDA, r_loss_factor=R_LOSS_FACTOR)
 to_cat = cyclegan.generator_g(sample_dog)
 to_dog = cyclegan.generator_f(sample_cat)
 plt.figure(figsize=(8, 8))
@@ -640,7 +644,7 @@ terminate = TerminateOnNaN()
 callbacks = [checkpoint, terminate]
 
 # Training
-EPOCHS = 50
+EPOCHS = 10
 
 # Train
 train_dataset = tf.data.Dataset.zip((train_dogs, train_cats))
