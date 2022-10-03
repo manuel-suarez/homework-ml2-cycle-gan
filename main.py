@@ -650,7 +650,7 @@ cyclegan.fit(train_dataset,
              initial_epoch   = 0,
              steps_per_epoch = steps_per_epoch,
              callbacks       = callbacks)
-cyclegan.save_weights("model_vae_cycle_gan.h5")
+#cyclegan.save_weights("model_vae_cycle_gan.h5")
 
 
 def generate_images(model, test_input, figname):
