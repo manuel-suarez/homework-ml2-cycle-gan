@@ -612,7 +612,7 @@ terminate = TerminateOnNaN()
 callbacks = [checkpoint, terminate]
 
 # Training
-EPOCHS = 5
+EPOCHS = 1
 
 # Train
 train_dataset = tf.data.Dataset.zip((train_dogs, train_cats))
@@ -623,7 +623,7 @@ cyclegan.fit(train_dataset,
              initial_epoch   = 0,
              steps_per_epoch = steps_per_epoch,
              callbacks       = callbacks)
-cyclegan.save_weights("model_vae_faces_1e4.h5")
+cyclegan.save_weights("model_vae_cycle_gan.h5")
 
 
 def generate_images(model, test_input, figname):
