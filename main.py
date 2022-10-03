@@ -297,7 +297,7 @@ class VAE(keras.Model):
         self.total_loss_tracker = tf.keras.metrics.Mean(name="total_loss")
         self.reconstruction_loss_tracker = tf.keras.metrics.Mean(name="reconstruction_loss")
         self.kl_loss_tracker = tf.keras.metrics.Mean(name="kl_loss")
-        self.mae = tf.keras.losses.MeanAbsoluteError()
+        self.mae = tf.keras.losses.MeanAbsoluteError(reduction=tf.keras.losses.Reduction.NONE)
 
         # Encoder
         self.encoder_model = Encoder(input_dim=self.input_dim,
