@@ -416,7 +416,7 @@ def identity_loss(real_image, same_image):
 INPUT_DIM     = (IMG_WIDTH,IMG_HEIGHT,3)
 LATENT_DIM    = 150
 LAMBDA = 10
-R_LOSS_FACTOR = 100000
+R_LOSS_FACTOR = 10000
 
 class CycleGAN(keras.Model):
     def __init__(self, p_lambda=LAMBDA, r_loss_factor=R_LOSS_FACTOR, **kwargs):
