@@ -334,7 +334,6 @@ class VAE(keras.Model):
                 self.reconstruction_loss_tracker,
                 self.kl_loss_tracker, ]
 
-    @tf.function
     def train_step(self, data):
         dog_img = data[0]
         cat_img = data[1]
