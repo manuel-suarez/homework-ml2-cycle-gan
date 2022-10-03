@@ -27,8 +27,7 @@ IMG_WIDTH = 256
 IMG_HEIGHT = 256
 
 n_images        = dog_files.shape[0]
-# steps_per_epoch = n_images//BATCH_SIZE
-steps_per_epoch = 100
+steps_per_epoch = n_images//BATCH_SIZE
 print('num image files : ', n_images)
 print('steps per epoch : ', steps_per_epoch )
 
@@ -436,8 +435,8 @@ class CycleGAN(keras.Model):
         self.vae_f_optimizer = keras.optimizers.Adam()
 
         # VAE Loss
-        self.vae_g_loss = tf.keras.losses.MeanAbsoluteError()
-        self.vae_f_loss = tf.keras.losses.MeanAbsoluteError()
+        self.vae_g_loss = tf.keras.losses.MeanAbsoluteError(reduction=tf.keras.losses.Reduction.NONE)
+        self.vae_f_loss = tf.keras.losses.MeanAbsoluteError(reduction=tf.keras.losses.Reduction.NONE)
 
         # VAE Metrics
         self.vae_g_total_loss_tracker = tf.keras.metrics.Mean(name="vae_g_total_loss")
@@ -462,7 +461,7 @@ class CycleGAN(keras.Model):
         self.discriminator_y_optimizer = tf.keras.optimizers.Adam(2e-4, beta_1=0.5)
 
         # Loss
-        self.loss_obj = tf.keras.losses.BinaryCrossentropy(from_logits=True)
+        self.loss_obj = tf.keras.losses.BinaryCrossentropy(reduction=tf.keras.losses.Reduction.NONE, from_logits=True)
 
         # Cycle-GAN Metrics
         self.total_cycle_loss_tracker = tf.keras.metrics.Mean(name="total_cycle_loss")
