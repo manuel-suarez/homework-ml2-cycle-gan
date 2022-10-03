@@ -567,7 +567,7 @@ class CycleGAN(keras.Model):
             "disc_y_loss": self.disc_y_loss_tracker.result()
         }
 
-cyclegan = CycleGAN(p_lambda=LAMBDA, summary=True)
+cyclegan = CycleGAN(p_lambda=LAMBDA, r_loss_factor=R_LOSS_FACTOR)
 to_cat = cyclegan.generator_g(sample_dog)
 to_dog = cyclegan.generator_f(sample_cat)
 plt.figure(figsize=(8, 8))
