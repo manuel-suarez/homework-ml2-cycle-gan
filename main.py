@@ -471,7 +471,6 @@ class CycleGAN(keras.Model):
 
         self.built = True
 
-    @tf.function
     def train_step(self, data):
         # persistent is set to True because the tape is used more than
         # once to calculate the gradients.
