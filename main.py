@@ -481,12 +481,12 @@ class CycleGAN(keras.Model):
             # VAE generates intermediate representation of outpus
             # VAE G generates X -> X'
             vae_g_x = self.vae_g.encoder_model(real_x)
-            vae_g_z, vae_g_z_mean, vae_g_z_log_var = self.vae.sampler_model(vae_g_x)
+            vae_g_z, vae_g_z_mean, vae_g_z_log_var = self.vae_g.sampler_model(vae_g_x)
             vae_g_y = self.vae_g.decoder_model(vae_g_z)
             # VAE F generates Y -> Y'
-            vae_f_y = self.vae_g.encoder_model(real_y)
-            vae_f_z, vae_f_z_mean, vae_f_z_log_var = self.vae_g.sampler_model(vae_f_y)
-            vae_f_x = self.vae_g.decoder_model(vae_f_z)
+            vae_f_y = self.vae_f.encoder_model(real_y)
+            vae_f_z, vae_f_z_mean, vae_f_z_log_var = self.vae_f.sampler_model(vae_f_y)
+            vae_f_x = self.vae_f.decoder_model(vae_f_z)
 
             # VAE G Loss
             vae_g_r_loss = self.vae_g.r_loss_factor * self.vae_g.mae(real_y, vae_g_y)
