@@ -50,6 +50,9 @@ def preprocess_image_train(image):
   image = normalize(image)
   return image
 
+def load_images(img1, img2):
+    return preprocess_image_train(img1), preprocess_image_train(img2)
+
 def preprocess_image_test(image):
   image = normalize(image)
   return image
@@ -72,18 +75,21 @@ def build_data(data_folder, global_batch_size):
     BUFFER_SIZE = len(dog_files)
 
     train_dogs = tf.data.Dataset.list_files(dog_files, shuffle=False)
-    train_dogs = train_dogs.map(preprocess_image_train, num_parallel_calls=tf.data.AUTOTUNE).batch(global_batch_size)
+    #train_dogs = train_dogs.map(preprocess_image_train, num_parallel_calls=tf.data.AUTOTUNE).batch(global_batch_size)
     #train_dogs = train_dogs.cache().map(
     #    preprocess_image_train, num_parallel_calls=AUTOTUNE).shuffle(
     #    BUFFER_SIZE).batch(global_batch_size)
 
     train_cats = tf.data.Dataset.list_files(cat_files, shuffle=False)
-    train_cats = train_cats.map(preprocess_image_train, num_parallel_calls=tf.data.AUTOTUNE).batch(global_batch_size)
+    train_dataset = tf.data.Dataset.zip((train_dogs, train_cats)).map(load_images, num_parallel_calls=AUTOTUNE).shuffle(BUFFER_SIZE).batch(global_batch_size)
+    # train_dataset = tf.data.Dataset.from_tensor_slices((train_images, train_labels)).shuffle(BUFFER_SIZE).batch(GLOBAL_BATCH_SIZE)
+
+    #train_cats = train_cats.map(preprocess_image_train, num_parallel_calls=tf.data.AUTOTUNE).batch(global_batch_size)
     #train_cats = train_cats.cache().map(
     #    preprocess_image_train, num_parallel_calls=AUTOTUNE).shuffle(
     #    BUFFER_SIZE).batch(global_batch_size)
 
-    return train_dogs, train_cats, BUFFER_SIZE
+    return train_dataset, BUFFER_SIZE
 
 def generate_figure_1_2(train_dogs, train_cats):
     sample_dog = next(iter(train_dogs))

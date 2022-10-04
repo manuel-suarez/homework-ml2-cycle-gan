@@ -30,7 +30,7 @@ BATCH_SIZE_PER_REPLICA = 12
 GLOBAL_BATCH_SIZE = BATCH_SIZE_PER_REPLICA * mirrored_strategy.num_replicas_in_sync
 
 DATA_FOLDER = '/home/est_posgrado_manuel.suarez/data/dogs-vs-cats/train'
-train_dogs, train_cats, BUFFER_SIZE = build_data(DATA_FOLDER, global_batch_size=GLOBAL_BATCH_SIZE)
+train_dataset, BUFFER_SIZE = build_data(DATA_FOLDER, global_batch_size=GLOBAL_BATCH_SIZE)
 # generate_figure_1_2(train_dogs, train_cats)
 
 IMG_WIDTH = 256
@@ -292,7 +292,7 @@ info("Model builded")
 # train_dist_dataset = strategy.experimental_distribute_dataset(train_dataset)
 # test_dist_dataset = strategy.experimental_distribute_dataset(test_dataset)
 info("Train dataset")
-train_dataset = tf.data.Dataset.zip((train_dogs, train_cats))
+# train_dataset = tf.data.Dataset.zip((train_dogs, train_cats))
 info("Distributed dataset")
 dist_dataset = mirrored_strategy.experimental_distribute_dataset(train_dataset)
 
