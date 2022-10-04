@@ -313,7 +313,7 @@ for epoch in range(EPOCHS):
               "vae_f_loss: {}, vae_f_reconstruction_loss: {}, vae_f_kl_loss: {}, "
               "total_cycle_loss: {}, total_gen_g_loss: {}, total_gen_f_loss: {}, "
               "disc_x_loss: {}, disc_y_loss: {}")
-  print(template.format(epoch + 1,
+  info(template.format(epoch + 1,
                         vae_g_total_loss_tracker.result(),
                         vae_g_reconstruction_loss_tracker.result(),
                         vae_g_kl_loss_tracker.result(),
