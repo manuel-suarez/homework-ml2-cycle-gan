@@ -32,7 +32,12 @@ BATCH_SIZE = 30
 IMG_WIDTH = 256
 IMG_HEIGHT = 256
 
-GLOBAL_BATCH_SIZE = BATCH_SIZE * mirrored_strategy.num_replicas_in_sync
+BUFFER_SIZE = len(dog_files)
+
+BATCH_SIZE_PER_REPLICA = 64
+GLOBAL_BATCH_SIZE = BATCH_SIZE_PER_REPLICA * mirrored_strategy.num_replicas_in_sync
+
+EPOCHS = 10
 
 n_images        = dog_files.shape[0]
 steps_per_epoch = n_images//BATCH_SIZE
@@ -94,13 +99,13 @@ train_dogs = tf.data.Dataset.list_files(dog_files, shuffle=False)
 train_dogs = train_dogs.map(load_image, num_parallel_calls=tf.data.AUTOTUNE)
 train_dogs = train_dogs.cache().map(
     preprocess_image_train, num_parallel_calls=AUTOTUNE).shuffle(
-    BUFFER_SIZE).batch(BATCH_SIZE)
+    BUFFER_SIZE).batch(GLOBAL_BATCH_SIZE)
 
 train_cats = tf.data.Dataset.list_files(cat_files, shuffle=False)
 train_cats = train_cats.map(load_image, num_parallel_calls=tf.data.AUTOTUNE)
 train_cats = train_cats.cache().map(
     preprocess_image_train, num_parallel_calls=AUTOTUNE).shuffle(
-    BUFFER_SIZE).batch(BATCH_SIZE)
+    BUFFER_SIZE).batch(GLOBAL_BATCH_SIZE)
 
 sample_dog = next(iter(train_dogs))
 sample_cat = next(iter(train_cats))
@@ -654,10 +659,13 @@ checkpoint = ModelCheckpoint(filepath=filepath,
 terminate = TerminateOnNaN()
 callbacks = [checkpoint, terminate]
 
-# Training
-EPOCHS = 20
-
 # Train
+train_dataset = tf.data.Dataset.from_tensor_slices((train_images, train_labels)).shuffle(BUFFER_SIZE).batch(GLOBAL_BATCH_SIZE)
+test_dataset = tf.data.Dataset.from_tensor_slices((test_images, test_labels)).batch(GLOBAL_BATCH_SIZE)
+
+train_dist_dataset = strategy.experimental_distribute_dataset(train_dataset)
+test_dist_dataset = strategy.experimental_distribute_dataset(test_dataset)
+
 train_dataset = tf.data.Dataset.zip((train_dogs, train_cats))
 dist_dataset = mirrored_strategy.experimental_distribute_dataset(train_dataset)
 cyclegan.compile()
