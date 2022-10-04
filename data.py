@@ -110,7 +110,10 @@ def generate_figure_1_2(train_dogs, train_cats):
     print("Plotting cat")
     plt.savefig('figure_2.png')
 
-def generate_sample(generator_g, generator_f, discriminator_x, discriminator_y):
+def generate_sample(train_dogs, train_cats, generator_g, generator_f, discriminator_x, discriminator_y):
+    sample_dog = next(iter(train_dogs))
+    sample_cat = next(iter(train_cats))
+
     to_cat = generator_g(sample_dog)
     to_dog = generator_f(sample_cat)
     plt.figure(figsize=(8, 8))
