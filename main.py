@@ -31,7 +31,7 @@ GLOBAL_BATCH_SIZE = BATCH_SIZE_PER_REPLICA * mirrored_strategy.num_replicas_in_s
 
 DATA_FOLDER = '/home/est_posgrado_manuel.suarez/data/dogs-vs-cats/train'
 train_dogs, train_cats, BUFFER_SIZE = build_data(DATA_FOLDER, global_batch_size=GLOBAL_BATCH_SIZE)
-generate_figure_1_2(train_dogs, train_cats)
+# generate_figure_1_2(train_dogs, train_cats)
 
 IMG_WIDTH = 256
 IMG_HEIGHT = 256
