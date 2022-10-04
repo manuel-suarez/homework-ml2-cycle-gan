@@ -44,7 +44,7 @@ GLOBAL_BATCH_SIZE = BATCH_SIZE_PER_REPLICA * mirrored_strategy.num_replicas_in_s
 EPOCHS = 10
 
 n_images        = dog_files.shape[0]
-steps_per_epoch = n_images//BATCH_SIZE
+steps_per_epoch = n_images//BATCH_SIZE_PER_REPLICA
 print('num image files : ', n_images)
 print('steps per epoch : ', steps_per_epoch )
 
@@ -643,11 +643,11 @@ plt.figure(figsize=(8, 8))
 
 plt.subplot(121)
 plt.title('Is a real cat?')
-plt.imshow(cyclegan.discriminator_y(sample_cat)[0, ..., -1], cmap='RdBu_r')
+plt.imshow(discriminator_y(sample_cat)[0, ..., -1], cmap='RdBu_r')
 
 plt.subplot(122)
 plt.title('Is a real dog?')
-plt.imshow(cyclegan.discriminator_x(sample_dog)[0, ..., -1], cmap='RdBu_r')
+plt.imshow(discriminator_x(sample_dog)[0, ..., -1], cmap='RdBu_r')
 
 plt.savefig('figure_4.png')
 print("Model builded")
