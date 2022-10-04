@@ -17,7 +17,7 @@ from data import build_data, generate_figure_1_2, generate_sample
 
 # Execution strategy
 mirrored_strategy = tf.distribute.MirroredStrategy()
-print('Number of devices for distributed strategy: {}'.format(mirrored_strategy.num_replicas_in_sync))
+info('Number of devices for distributed strategy: {}'.format(mirrored_strategy.num_replicas_in_sync))
 # Check GPU execution
 
 BATCH_SIZE_PER_REPLICA = 12
@@ -40,8 +40,8 @@ R_LOSS_FACTOR = 10000
 EPOCHS = 2
 
 steps_per_epoch = BUFFER_SIZE//BATCH_SIZE_PER_REPLICA
-print('num image files : ', BUFFER_SIZE)
-print('steps per epoch : ', steps_per_epoch)
+info(f"num image files : {BUFFER_SIZE}")
+info(f"steps per epoch : {steps_per_epoch}")
 
 # Configure Pix2Pix model
 OUTPUT_CHANNELS = 3
@@ -257,7 +257,7 @@ def distributed_train_step(dist_inputs):
     # return mirrored_strategy.reduce(tf.distribute.ReduceOp.SUM, per_replica_losses, axis=None)
 
 generate_sample(train_dogs, train_cats, generator_g, generator_f, discriminator_x, discriminator_y)
-print("Model builded")
+info("Model builded")
 
 # Checkpoints
 # from tensorflow.keras.callbacks import ModelCheckpoint
