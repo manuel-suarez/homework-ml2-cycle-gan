@@ -1,3 +1,5 @@
+import numpy as np
+import tensorflow as tf
 from tensorflow import keras
 class Encoder(keras.Model):
     def __init__(self, input_dim, output_dim, encoder_conv_filters, encoder_conv_kernel_size, encoder_conv_strides,
@@ -147,14 +149,14 @@ class Sampler(keras.Model):
         return self.model(inputs)
 
 class VAE(keras.Model):
-    def __init__(self, r_loss_factor=1, summary=False, **kwargs):
+    def __init__(self, input_dim, latent_dim, r_loss_factor=1, summary=False, **kwargs):
         super(VAE, self).__init__(**kwargs)
 
         self.r_loss_factor = r_loss_factor
 
         # Architecture
-        self.input_dim = INPUT_DIM
-        self.latent_dim = LATENT_DIM
+        self.input_dim = input_dim
+        self.latent_dim = latent_dim
         self.encoder_conv_filters = [64, 64, 64, 64]
         self.encoder_conv_kernel_size = [3, 3, 3, 3]
         self.encoder_conv_strides = [2, 2, 2, 2]

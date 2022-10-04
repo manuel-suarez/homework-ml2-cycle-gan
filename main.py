@@ -196,8 +196,8 @@ with mirrored_strategy.scope():
 # Model, optimizer, checkpoint
 with mirrored_strategy.scope():
     # VAE Model
-    vae_g = VAE(r_loss_factor=R_LOSS_FACTOR, summary=False)
-    vae_f = VAE(r_loss_factor=R_LOSS_FACTOR, summary=False)
+    vae_g = VAE(r_loss_factor=R_LOSS_FACTOR, summary=False, input_dim=INPUT_DIM, latent_dim=LATENT_DIM)
+    vae_f = VAE(r_loss_factor=R_LOSS_FACTOR, summary=False, input_dim=INPUT_DIM, latent_dim=LATENT_DIM)
 
     # VAE Optimizers
     vae_g_optimizer = keras.optimizers.Adam()
