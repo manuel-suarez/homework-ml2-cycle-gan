@@ -47,6 +47,7 @@ info(f"steps per epoch : {steps_per_epoch}")
 OUTPUT_CHANNELS = 3
 
 # Loss Functions
+info("Loss functions")
 with mirrored_strategy.scope():
     # Set reduction to `NONE` so you can do the reduction afterwards and divide by global batch size.
 
@@ -83,6 +84,7 @@ with mirrored_strategy.scope():
         # return tf.nn.compute_average_loss(per_example_loss, global_batch_size=GLOBAL_BATCH_SIZE)
 
 # Metrics
+info("Metrics")
 with mirrored_strategy.scope():
     # VAE Metrics
     vae_g_total_loss_tracker = tf.keras.metrics.Mean(name="vae_g_total_loss")
@@ -100,6 +102,7 @@ with mirrored_strategy.scope():
 
 # A model, an optimizer, and a checkpoint must be created under `strategy.scope`.
 # Model, optimizer, checkpoint
+info("Model, optimizer")
 with mirrored_strategy.scope():
     # VAE Model
     vae_g = VAE(r_loss_factor=R_LOSS_FACTOR, summary=False, input_dim=INPUT_DIM, latent_dim=LATENT_DIM)
@@ -126,6 +129,7 @@ with mirrored_strategy.scope():
     # checkpoint = tf.train.Checkpoint(optimizer=optimizer, model=model)
 
 # Define a train_step without @tf.function
+info("Train step")
 def train_step(data):
     # real_x: dog image
     # real_y: cat image
@@ -251,6 +255,7 @@ def train_step(data):
     }
 
 # `run` replicates the provided computation and runs it with the distributed input.
+info("Distributed train step")
 @tf.function
 def distributed_train_step(dist_inputs):
     mirrored_strategy.run(train_step, args=(dist_inputs,))
