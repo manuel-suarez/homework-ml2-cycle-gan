@@ -619,8 +619,8 @@ def train_step(data):
 # `run` replicates the provided computation and runs it with the distributed input.
 @tf.function
 def distributed_train_step(dist_inputs):
-    per_replica_losses = mirrored_strategy.run(train_step, args=(dist_inputs,))
-    return mirrored_strategy.reduce(tf.distribute.ReduceOp.SUM, per_replica_losses, axis=None)
+    mirrored_strategy.run(train_step, args=(dist_inputs,))
+    # return mirrored_strategy.reduce(tf.distribute.ReduceOp.SUM, per_replica_losses, axis=None)
 
 to_cat = generator_g(sample_dog)
 to_dog = generator_f(sample_cat)
