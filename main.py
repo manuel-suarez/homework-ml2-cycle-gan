@@ -652,10 +652,10 @@ callbacks = [checkpoint, terminate]
 EPOCHS = 20
 
 # Train
-train_dataset = tf.data.Dataset.zip((train_dogs, train_cats)).repeat()
+train_dataset = tf.data.Dataset.zip((train_dogs, train_cats))
 cyclegan.compile()
 cyclegan.fit(train_dataset,
-             batch_size      = GLOBAL_BATCH_SIZE,
+             batch_size      = BATCH_SIZE,
              epochs          = EPOCHS,
              # initial_epoch   = 0,
              # steps_per_epoch = steps_per_epoch,
