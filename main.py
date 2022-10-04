@@ -293,7 +293,7 @@ for epoch in range(EPOCHS):
   # TRAIN LOOP
   num_batches = 0
   for x in dist_dataset:
-      print("Step ", num_batches)
+      info(f"Step {num_batches}")
       distributed_train_step(x)
       num_batches += 1
 
