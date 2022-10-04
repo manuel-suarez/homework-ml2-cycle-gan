@@ -603,6 +603,12 @@ class CycleGAN(keras.Model):
             "disc_y_loss": self.disc_y_loss_tracker.result()
         }
 
+    @tf.function
+    def distributed_train_step(dist_inputs):
+        per_replica_losses = mirrored_strategy.run(train_step, args=(dist_inputs,))
+        return mirrored_strategy.reduce(tf.distribute.ReduceOp.SUM, per_replica_losses,
+                                        axis=None)
+
 with mirrored_strategy.scope():
     cyclegan = CycleGAN(p_lambda=LAMBDA, r_loss_factor=R_LOSS_FACTOR)
 to_cat = cyclegan.generator_g(sample_dog)
@@ -653,8 +659,9 @@ EPOCHS = 20
 
 # Train
 train_dataset = tf.data.Dataset.zip((train_dogs, train_cats))
+dist_dataset = mirrored_strategy.experimental_distribute_dataset(train_dataset)
 cyclegan.compile()
-cyclegan.fit(train_dataset,
+cyclegan.fit(dist_dataset,
              batch_size      = BATCH_SIZE,
              epochs          = EPOCHS,
              # initial_epoch   = 0,
