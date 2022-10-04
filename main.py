@@ -94,13 +94,13 @@ train_dogs = tf.data.Dataset.list_files(dog_files, shuffle=False)
 train_dogs = train_dogs.map(load_image, num_parallel_calls=tf.data.AUTOTUNE)
 train_dogs = train_dogs.cache().map(
     preprocess_image_train, num_parallel_calls=AUTOTUNE).shuffle(
-    BUFFER_SIZE).batch(BATCH_SIZE).repeat()
+    BUFFER_SIZE).batch(BATCH_SIZE)
 
 train_cats = tf.data.Dataset.list_files(cat_files, shuffle=False)
 train_cats = train_cats.map(load_image, num_parallel_calls=tf.data.AUTOTUNE)
 train_cats = train_cats.cache().map(
     preprocess_image_train, num_parallel_calls=AUTOTUNE).shuffle(
-    BUFFER_SIZE).batch(BATCH_SIZE).repeat()
+    BUFFER_SIZE).batch(BATCH_SIZE)
 
 sample_dog = next(iter(train_dogs))
 sample_cat = next(iter(train_cats))
@@ -652,7 +652,7 @@ callbacks = [checkpoint, terminate]
 EPOCHS = 20
 
 # Train
-train_dataset = tf.data.Dataset.zip((train_dogs, train_cats))
+train_dataset = tf.data.Dataset.zip((train_dogs, train_cats)).repeat()
 cyclegan.compile()
 cyclegan.fit(train_dataset,
              batch_size      = GLOBAL_BATCH_SIZE,
