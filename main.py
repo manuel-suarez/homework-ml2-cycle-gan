@@ -1,10 +1,11 @@
 # Setup the pipeline
 import tensorflow as tf
-tf.debugging.set_log_device_placement(True)
-print("TensorFlow version: ", tf.__version__)
-print("Num GPUs Available: ", len(tf.config.list_physical_devices('GPU')))
+# tf.debugging.set_log_device_placement(True)
 # Especificamos nivel de logging para verificar la estrategia distribuida
 tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.INFO)
+from tf.compat.v1.logging import info
+info(f"TensorFlow version: {tf.__version__}")
+info(f"Num GPUs Available: {len(tf.config.list_physical_devices('GPU'))}")
 
 from tensorflow import keras
 from tensorflow_examples.models.pix2pix import pix2pix
