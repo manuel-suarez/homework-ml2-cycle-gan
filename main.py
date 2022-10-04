@@ -15,6 +15,8 @@ print(tf.__version__)
 
 # Execution strategy
 mirrored_strategy = tf.distribute.MirroredStrategy()
+# Check GPU execution
+tf.debugging.set_log_device_placement(True)
 
 # Input pipeline
 DATA_FOLDER   = '/home/est_posgrado_manuel.suarez/data/dogs-vs-cats/train'
