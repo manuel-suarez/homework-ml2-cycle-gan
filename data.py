@@ -45,6 +45,7 @@ def random_jitter(image):
   return image
 
 def preprocess_image_train(image):
+  image = read_and_decode(image)
   image = random_jitter(image)
   image = normalize(image)
   return image
