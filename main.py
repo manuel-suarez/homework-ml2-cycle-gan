@@ -440,13 +440,13 @@ with mirrored_strategy.scope():
 
     def calc_cycle_loss(real_image, cycled_image):
         loss1 = tf.reduce_mean(tf.abs(real_image - cycled_image))
-        per_example_loss = LAMBDA * loss1
-        return tf.nn.compute_average_loss(per_example_loss, global_batch_size=GLOBAL_BATCH_SIZE)
+        return LAMBDA * loss1
+        # return tf.nn.compute_average_loss(per_example_loss, global_batch_size=GLOBAL_BATCH_SIZE)
 
     def identity_loss(real_image, same_image):
         loss = tf.reduce_mean(tf.abs(real_image - same_image))
-        per_example_loss = LAMBDA * 0.5 * loss
-        return tf.nn.compute_average_loss(per_example_loss, global_batch_size=GLOBAL_BATCH_SIZE)
+        return LAMBDA * 0.5 * loss
+        # return tf.nn.compute_average_loss(per_example_loss, global_batch_size=GLOBAL_BATCH_SIZE)
 
 # Metrics
 with mirrored_strategy.scope():
