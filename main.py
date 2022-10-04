@@ -1,9 +1,9 @@
 # Setup the pipeline
 import tensorflow as tf
+from tf.compat.v1.logging import info
 # tf.debugging.set_log_device_placement(True)
 # Especificamos nivel de logging para verificar la estrategia distribuida
 tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.INFO)
-from tf.compat.v1.logging import info
 info(f"TensorFlow version: {tf.__version__}")
 info(f"Num GPUs Available: {len(tf.config.list_physical_devices('GPU'))}")
 
