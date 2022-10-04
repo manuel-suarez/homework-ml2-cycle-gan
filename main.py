@@ -258,7 +258,9 @@ def train_step(data):
 info("Distributed train step")
 @tf.function
 def distributed_train_step(dist_inputs):
+    info("Train step")
     mirrored_strategy.run(train_step, args=(dist_inputs,))
+    info("Finished train step")
     # return mirrored_strategy.reduce(tf.distribute.ReduceOp.SUM, per_replica_losses, axis=None)
 
 generate_sample(train_dogs, train_cats, generator_g, generator_f, discriminator_x, discriminator_y)
