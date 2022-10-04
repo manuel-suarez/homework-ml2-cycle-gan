@@ -2,8 +2,9 @@
 import numpy as np
 import tensorflow as tf
 # tf.debugging.set_log_device_placement(True)
-print(tf.__version__)
+print("TensorFlow version: ", tf.__version__)
 print("Num GPUs Available: ", len(tf.config.list_physical_devices('GPU')))
+# Especificamos nivel de logging para verificar la estrategia distribuida
 tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.INFO)
 
 from glob import glob
@@ -16,11 +17,9 @@ import matplotlib.pyplot as plt
 
 AUTOTUNE = tf.data.AUTOTUNE
 
-print(tf.__version__)
-
 # Execution strategy
 mirrored_strategy = tf.distribute.MirroredStrategy()
-print('Number of devices: {}'.format(mirrored_strategy.num_replicas_in_sync))
+print('Number of devices for distributed strategy: {}'.format(mirrored_strategy.num_replicas_in_sync))
 # Check GPU execution
 
 # Input pipeline
@@ -29,7 +28,7 @@ dog_files = np.array(glob(os.path.join(DATA_FOLDER, 'dog.*.jpg')))
 cat_files = np.array(glob(os.path.join(DATA_FOLDER, 'cat.*.jpg')))
 
 BUFFER_SIZE = len(dog_files)
-BATCH_SIZE = 20
+BATCH_SIZE = 30
 IMG_WIDTH = 256
 IMG_HEIGHT = 256
 
