@@ -33,6 +33,8 @@ BATCH_SIZE = 20
 IMG_WIDTH = 256
 IMG_HEIGHT = 256
 
+GLOBAL_BATCH_SIZE = BATCH_SIZE * mirrored_strategy.num_replicas_in_sync
+
 n_images        = dog_files.shape[0]
 steps_per_epoch = n_images//BATCH_SIZE
 print('num image files : ', n_images)
@@ -654,7 +656,7 @@ EPOCHS = 20
 train_dataset = tf.data.Dataset.zip((train_dogs, train_cats))
 cyclegan.compile()
 cyclegan.fit(train_dataset,
-             batch_size      = BATCH_SIZE,
+             batch_size      = GLOBAL_BATCH_SIZE,
              epochs          = EPOCHS,
              initial_epoch   = 0,
              steps_per_epoch = steps_per_epoch,
