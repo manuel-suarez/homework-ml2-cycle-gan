@@ -1,6 +1,6 @@
 # Setup the pipeline
 import tensorflow as tf
-# tf.debugging.set_log_device_placement(True)
+tf.debugging.set_log_device_placement(True)
 print("TensorFlow version: ", tf.__version__)
 print("Num GPUs Available: ", len(tf.config.list_physical_devices('GPU')))
 # Especificamos nivel de logging para verificar la estrategia distribuida
