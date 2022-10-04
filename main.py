@@ -285,12 +285,14 @@ print("Model builded")
 train_dataset = tf.data.Dataset.zip((train_dogs, train_cats))
 dist_dataset = mirrored_strategy.experimental_distribute_dataset(train_dataset)
 
+print("Training")
 for epoch in range(EPOCHS):
   # TRAIN LOOP
   num_batches = 0
   for x in dist_dataset:
-    distributed_train_step(x)
-    num_batches += 1
+      print("Step ", num_batches)
+      distributed_train_step(x)
+      num_batches += 1
 
   # if epoch % 2 == 0:
   #   checkpoint.save(checkpoint_prefix)
