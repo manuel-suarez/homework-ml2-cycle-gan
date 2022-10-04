@@ -1,7 +1,7 @@
 # Setup the pipeline
 import tensorflow as tf
-from tf.compat.v1.logging import info
 # tf.debugging.set_log_device_placement(True)
+info = tf.compat.v1.logging.info
 # Especificamos nivel de logging para verificar la estrategia distribuida
 tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.INFO)
 info(f"TensorFlow version: {tf.__version__}")
