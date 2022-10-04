@@ -1,6 +1,10 @@
 # Setup the pipeline
 import numpy as np
 import tensorflow as tf
+print(tf.__version__)
+print("Num GPUs Available: ", len(tf.config.list_physical_devices('GPU')))
+tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.INFO)
+
 from glob import glob
 from tensorflow import keras
 from tensorflow_examples.models.pix2pix import pix2pix
@@ -15,8 +19,8 @@ print(tf.__version__)
 
 # Execution strategy
 mirrored_strategy = tf.distribute.MirroredStrategy()
+print('Number of devices: {}'.format(mirrored_strategy.num_replicas_in_sync))
 # Check GPU execution
-tf.debugging.set_log_device_placement(True)
 
 # Input pipeline
 DATA_FOLDER   = '/home/est_posgrado_manuel.suarez/data/dogs-vs-cats/train'
