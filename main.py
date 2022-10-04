@@ -15,7 +15,6 @@ import os
 import time
 import matplotlib.pyplot as plt
 
-from models import VAE
 
 AUTOTUNE = tf.data.AUTOTUNE
 
@@ -30,11 +29,14 @@ dog_files = np.array(glob(os.path.join(DATA_FOLDER, 'dog.*.jpg')))
 cat_files = np.array(glob(os.path.join(DATA_FOLDER, 'cat.*.jpg')))
 
 BUFFER_SIZE = len(dog_files)
-BATCH_SIZE = 30
 IMG_WIDTH = 256
 IMG_HEIGHT = 256
+OUTPUT_DIM = 3
 
-BUFFER_SIZE = len(dog_files)
+INPUT_DIM = (IMG_WIDTH, IMG_HEIGHT, OUTPUT_DIM)
+LATENT_DIM = 150
+LAMBDA = 10
+R_LOSS_FACTOR = 10000
 
 BATCH_SIZE_PER_REPLICA = 64
 GLOBAL_BATCH_SIZE = BATCH_SIZE_PER_REPLICA * mirrored_strategy.num_replicas_in_sync
@@ -312,7 +314,6 @@ class VAE(keras.Model):
         self.total_loss_tracker = tf.keras.metrics.Mean(name="total_loss")
         self.reconstruction_loss_tracker = tf.keras.metrics.Mean(name="reconstruction_loss")
         self.kl_loss_tracker = tf.keras.metrics.Mean(name="kl_loss")
-        self.mae = tf.keras.losses.MeanAbsoluteError(reduction=tf.keras.losses.Reduction.NONE)
 
         # Encoder
         self.encoder_model = Encoder(input_dim=self.input_dim,
@@ -411,215 +412,218 @@ class VAE(keras.Model):
         self.encoder_model.use_Dropout, self.decoder_model.use_Dropout = tmp1, tmp2
         return pred
 
-# Loss function
 # Loss Functions
-def discriminator_loss(loss_obj, real, generated):
-    real_loss = loss_obj(tf.ones_like(real), real)
-    generated_loss = loss_obj(tf.zeros_like(generated), generated)
-    total_disc_loss = real_loss + generated_loss
-    return total_disc_loss * 0.5
-
-def generator_loss(loss_obj, generated):
-    return loss_obj(tf.ones_like(generated), generated)
-
-def calc_cycle_loss(real_image, cycled_image):
-    loss1 = tf.reduce_mean(tf.abs(real_image - cycled_image))
-    return LAMBDA * loss1
-
-def identity_loss(real_image, same_image):
-    loss = tf.reduce_mean(tf.abs(real_image - same_ismage))
-    return LAMBDA * 0.5 * loss
-
-INPUT_DIM     = (IMG_WIDTH,IMG_HEIGHT,3)
-LATENT_DIM    = 150
-LAMBDA = 10
-R_LOSS_FACTOR = 10000
-
-class CycleGAN(keras.Model):
-    def __init__(self, p_lambda=LAMBDA, r_loss_factor=R_LOSS_FACTOR, **kwargs):
-        super(CycleGAN, self).__init__(**kwargs)
-        self.p_lambda = p_lambda
-
-        # VAE Model
-        self.vae_g = VAE(r_loss_factor=r_loss_factor, summary=False)
-        self.vae_f = VAE(r_loss_factor=r_loss_factor, summary=False)
-
-        # VAE Optimizers
-        self.vae_g_optimizer = keras.optimizers.Adam()
-        self.vae_f_optimizer = keras.optimizers.Adam()
-
-        # VAE Loss
-        self.vae_g_loss = tf.keras.losses.MeanAbsoluteError(reduction=tf.keras.losses.Reduction.NONE)
-        self.vae_f_loss = tf.keras.losses.MeanAbsoluteError(reduction=tf.keras.losses.Reduction.NONE)
-
-        # VAE Metrics
-        self.vae_g_total_loss_tracker = tf.keras.metrics.Mean(name="vae_g_total_loss")
-        self.vae_g_reconstruction_loss_tracker = tf.keras.metrics.Mean(name="vae_g_reconstruction_loss")
-        self.vae_g_kl_loss_tracker = tf.keras.metrics.Mean(name="vae_g_kl_loss")
-        self.vae_f_total_loss_tracker = tf.keras.metrics.Mean(name="vae_f_total_loss")
-        self.vae_f_reconstruction_loss_tracker = tf.keras.metrics.Mean(name="vae_f_reconstruction_loss")
-        self.vae_f_kl_loss_tracker = tf.keras.metrics.Mean(name="vae_f_kl_loss")
-
-        # Cycle-GAN Architecture
-        self.generator_g = pix2pix.unet_generator(OUTPUT_CHANNELS, norm_type='instancenorm')
-        self.generator_f = pix2pix.unet_generator(OUTPUT_CHANNELS, norm_type='instancenorm')
-
-        self.discriminator_x = pix2pix.discriminator(norm_type='instancenorm', target=False)
-        self.discriminator_y = pix2pix.discriminator(norm_type='instancenorm', target=False)
-
-        # Optimizers
-        self.generator_g_optimizer = tf.keras.optimizers.Adam(2e-4, beta_1=0.5)
-        self.generator_f_optimizer = tf.keras.optimizers.Adam(2e-4, beta_1=0.5)
-
-        self.discriminator_x_optimizer = tf.keras.optimizers.Adam(2e-4, beta_1=0.5)
-        self.discriminator_y_optimizer = tf.keras.optimizers.Adam(2e-4, beta_1=0.5)
-
-        # Loss
-        self.loss_obj = tf.keras.losses.BinaryCrossentropy(reduction=tf.keras.losses.Reduction.NONE, from_logits=True)
-
-        # Cycle-GAN Metrics
-        self.total_cycle_loss_tracker = tf.keras.metrics.Mean(name="total_cycle_loss")
-        self.total_gen_g_loss_tracker = tf.keras.metrics.Mean(name="total_gen_g_loss")
-        self.total_gen_f_loss_tracker = tf.keras.metrics.Mean(name="total_gen_f_loss")
-        self.disc_x_loss_tracker = tf.keras.metrics.Mean(name="disc_x_loss")
-        self.disc_y_loss_tracker = tf.keras.metrics.Mean(name="disc_y_loss")
-
-        self.built = True
-
-    def train_step(self, data):
-        # persistent is set to True because the tape is used more than
-        # once to calculate the gradients.
-        # real_x: dog image
-        # real_y: cat image
-        real_x, real_y = data
-        with tf.GradientTape(persistent=True) as tape:
-            # VAE Operations
-            # VAE generates intermediate representation of outpus
-            # VAE G generates X -> X'
-            vae_g_x = self.vae_g.encoder_model(real_x)
-            vae_g_z, vae_g_z_mean, vae_g_z_log_var = self.vae_g.sampler_model(vae_g_x)
-            vae_g_y = self.vae_g.decoder_model(vae_g_z)
-            # VAE F generates Y -> Y'
-            vae_f_y = self.vae_f.encoder_model(real_y)
-            vae_f_z, vae_f_z_mean, vae_f_z_log_var = self.vae_f.sampler_model(vae_f_y)
-            vae_f_x = self.vae_f.decoder_model(vae_f_z)
-
-            # VAE G Loss
-            vae_g_r_loss = self.vae_g.r_loss_factor * self.vae_g.mae(real_y, vae_g_y)
-            vae_g_kl_loss = -0.5 * (1 + vae_g_z_log_var - tf.square(vae_g_z_mean) - tf.exp(vae_g_z_log_var))
-            vae_g_kl_loss = tf.reduce_mean(tf.reduce_sum(vae_g_kl_loss, axis=1))
-            vae_g_total_loss = vae_g_r_loss + vae_g_kl_loss
-            # VAE F Loss
-            vae_f_r_loss = self.vae_f.r_loss_factor * self.vae_f.mae(real_x, vae_f_x)
-            vae_f_kl_loss = -0.5 * (1 + vae_f_z_log_var - tf.square(vae_f_z_mean) - tf.exp(vae_f_z_log_var))
-            vae_f_kl_loss = tf.reduce_mean(tf.reduce_sum(vae_f_kl_loss, axis=1))
-            vae_f_total_loss = vae_f_r_loss + vae_f_kl_loss
-
-            # Cycle-GAN Operations
-            # Generator G translates X' -> Y
-            # Generator F translates Y' -> X.
-            # Here we use the intermediate representación of cats and dogs generated by the VAE
-            fake_y = self.generator_g(vae_g_y, training=True) # vae_g_y instead of real_x
-            cycled_x = self.generator_f(fake_y, training=True)
-
-            fake_x = self.generator_f(vae_f_x, training=True) # vae_f_x instead of real_y
-            cycled_y = self.generator_g(fake_x, training=True)
-
-            # same_x and same_y are used for identity loss.
-            same_x = self.generator_f(real_x, training=True)
-            same_y = self.generator_g(real_y, training=True)
-
-            disc_real_x = self.discriminator_x(real_x, training=True)
-            disc_real_y = self.discriminator_y(real_y, training=True)
-
-            disc_fake_x = self.discriminator_x(fake_x, training=True)
-            disc_fake_y = self.discriminator_y(fake_y, training=True)
-
-            # calculate the loss
-            gen_g_loss = generator_loss(self.loss_obj, disc_fake_y)
-            gen_f_loss = generator_loss(self.loss_obj, disc_fake_x)
-
-            total_cycle_loss = calc_cycle_loss(real_x, cycled_x) + calc_cycle_loss(real_y, cycled_y)
-
-            # Total generator loss = adversarial loss + cycle loss
-            total_gen_g_loss = gen_g_loss + total_cycle_loss + identity_loss(real_y, same_y)
-            total_gen_f_loss = gen_f_loss + total_cycle_loss + identity_loss(real_x, same_x)
-
-            disc_x_loss = discriminator_loss(self.loss_obj, disc_real_x, disc_fake_x)
-            disc_y_loss = discriminator_loss(self.loss_obj, disc_real_y, disc_fake_y)
-
-        # VAE Gradients
-        vae_g_gradients = tape.gradient(vae_g_total_loss, self.vae_g.trainable_weights)
-        vae_f_gradients = tape.gradient(vae_f_total_loss, self.vae_f.trainable_weights)
-
-        # VAE optimizer step
-        self.vae_g_optimizer.apply_gradients(zip(vae_g_gradients,
-                                                 self.vae_g.trainable_weights))
-        self.vae_f_optimizer.apply_gradients(zip(vae_f_gradients,
-                                                 self.vae_f.trainable_weights))
-
-        # Calculate the gradients for generator and discriminator
-        generator_g_gradients = tape.gradient(total_gen_g_loss,
-                                              self.generator_g.trainable_variables)
-        generator_f_gradients = tape.gradient(total_gen_f_loss,
-                                              self.generator_f.trainable_variables)
-
-        discriminator_x_gradients = tape.gradient(disc_x_loss,
-                                                  self.discriminator_x.trainable_variables)
-        discriminator_y_gradients = tape.gradient(disc_y_loss,
-                                                  self.discriminator_y.trainable_variables)
-
-        # Apply the gradients to the optimizer
-        self.generator_g_optimizer.apply_gradients(zip(generator_g_gradients,
-                                                  self.generator_g.trainable_variables))
-
-        self.generator_f_optimizer.apply_gradients(zip(generator_f_gradients,
-                                                  self.generator_f.trainable_variables))
-
-        self.discriminator_x_optimizer.apply_gradients(zip(discriminator_x_gradients,
-                                                      self.discriminator_x.trainable_variables))
-
-        self.discriminator_y_optimizer.apply_gradients(zip(discriminator_y_gradients,
-                                                      self.discriminator_y.trainable_variables))
-
-        # compute progress
-        # vae
-        self.vae_g_total_loss_tracker.update_state(vae_g_total_loss)
-        self.vae_g_reconstruction_loss_tracker.update_state(vae_g_r_loss)
-        self.vae_g_kl_loss_tracker.update_state(vae_g_kl_loss)
-        self.vae_f_total_loss_tracker.update_state(vae_f_total_loss)
-        self.vae_f_reconstruction_loss_tracker.update_state(vae_f_r_loss)
-        self.vae_f_kl_loss_tracker.update_state(vae_f_kl_loss)
-        # cycle-gan
-        self.total_cycle_loss_tracker.update_state(total_cycle_loss)
-        self.total_gen_g_loss_tracker.update_state(total_gen_g_loss)
-        self.total_gen_f_loss_tracker.update_state(total_gen_f_loss)
-        self.disc_x_loss_tracker.update_state(disc_x_loss)
-        self.disc_y_loss_tracker.update_state(disc_y_loss)
-        return {
-            "vae_g_loss": self.vae_g_total_loss_tracker.result(),
-            "vae_g_reconstruction_loss": self.vae_g_reconstruction_loss_tracker.result(),
-            "vae_g_kl_loss": self.vae_g_kl_loss_tracker.result(),
-            "vae_f_loss": self.vae_f_total_loss_tracker.result(),
-            "vae_f_reconstruction_loss": self.vae_f_reconstruction_loss_tracker.result(),
-            "vae_f_kl_loss": self.vae_f_kl_loss_tracker.result(),
-            "total_cycle_loss": self.total_cycle_loss_tracker.result(),
-            "total_gen_g_loss": self.total_gen_g_loss_tracker.result(),
-            "total_gen_f_loss": self.total_gen_f_loss_tracker.result(),
-            "disc_x_loss": self.disc_x_loss_tracker.result(),
-            "disc_y_loss": self.disc_y_loss_tracker.result()
-        }
-
-    @tf.function
-    def distributed_train_step(dist_inputs):
-        per_replica_losses = mirrored_strategy.run(train_step, args=(dist_inputs,))
-        return mirrored_strategy.reduce(tf.distribute.ReduceOp.SUM, per_replica_losses,
-                                        axis=None)
-
 with mirrored_strategy.scope():
-    cyclegan = CycleGAN(p_lambda=LAMBDA, r_loss_factor=R_LOSS_FACTOR)
-to_cat = cyclegan.generator_g(sample_dog)
-to_dog = cyclegan.generator_f(sample_cat)
+    # Set reduction to `NONE` so you can do the reduction afterwards and divide by global batch size.
+
+    # VAE Loss
+    vae_g_loss = tf.keras.losses.MeanAbsoluteError(reduction=tf.keras.losses.Reduction.NONE)
+    vae_f_loss = tf.keras.losses.MeanAbsoluteError(reduction=tf.keras.losses.Reduction.NONE)
+    # Cycle-GAN Loss
+    loss_obj = tf.keras.losses.BinaryCrossentropy(from_logits=True, reduction=tf.keras.losses.Reduction.NONE)
+    loss_object = tf.keras.losses.SparseCategoricalCrossentropy(
+      from_logits=True,
+      reduction=tf.keras.losses.Reduction.NONE)
+    def compute_loss(labels, predictions):
+        per_example_loss = loss_object(labels, predictions)
+        return tf.nn.compute_average_loss(per_example_loss, global_batch_size=GLOBAL_BATCH_SIZE)
+    def discriminator_loss(loss_obj, real, generated):
+        real_loss = loss_obj(tf.ones_like(real), real)
+        generated_loss = loss_obj(tf.zeros_like(generated), generated)
+        total_disc_loss = real_loss + generated_loss
+        per_example_loss = total_disc_loss * 0.5
+        return tf.nn.compute_average_loss(per_example_loss, global_batch_size=GLOBAL_BATCH_SIZE)
+
+    def generator_loss(loss_obj, generated):
+        per_example_loss = loss_obj(tf.ones_like(generated), generated)
+        return tf.nn.compute_average_loss(per_example_loss, global_batch_size=GLOBAL_BATCH_SIZE)
+
+    def calc_cycle_loss(real_image, cycled_image):
+        loss1 = tf.reduce_mean(tf.abs(real_image - cycled_image))
+        per_example_loss = LAMBDA * loss1
+        return tf.nn.compute_average_loss(per_example_loss, global_batch_size=GLOBAL_BATCH_SIZE)
+
+    def identity_loss(real_image, same_image):
+        loss = tf.reduce_mean(tf.abs(real_image - same_image))
+        per_example_loss = LAMBDA * 0.5 * loss
+        return tf.nn.compute_average_loss(per_example_loss, global_batch_size=GLOBAL_BATCH_SIZE)
+
+# Metrics
+with mirrored_strategy.scope():
+    # VAE Metrics
+    vae_g_total_loss_tracker = tf.keras.metrics.Mean(name="vae_g_total_loss")
+    vae_g_reconstruction_loss_tracker = tf.keras.metrics.Mean(name="vae_g_reconstruction_loss")
+    vae_g_kl_loss_tracker = tf.keras.metrics.Mean(name="vae_g_kl_loss")
+    vae_f_total_loss_tracker = tf.keras.metrics.Mean(name="vae_f_total_loss")
+    vae_f_reconstruction_loss_tracker = tf.keras.metrics.Mean(name="vae_f_reconstruction_loss")
+    vae_f_kl_loss_tracker = tf.keras.metrics.Mean(name="vae_f_kl_loss")
+    # Cycle-GAN Metrics
+    total_cycle_loss_tracker = tf.keras.metrics.Mean(name="total_cycle_loss")
+    total_gen_g_loss_tracker = tf.keras.metrics.Mean(name="total_gen_g_loss")
+    total_gen_f_loss_tracker = tf.keras.metrics.Mean(name="total_gen_f_loss")
+    disc_x_loss_tracker = tf.keras.metrics.Mean(name="disc_x_loss")
+    disc_y_loss_tracker = tf.keras.metrics.Mean(name="disc_y_loss")
+
+# A model, an optimizer, and a checkpoint must be created under `strategy.scope`.
+# Model, optimizer, checkpoint
+with mirrored_strategy.scope():
+    # VAE Model
+    vae_g = VAE(r_loss_factor=R_LOSS_FACTOR, summary=False)
+    vae_f = VAE(r_loss_factor=R_LOSS_FACTOR, summary=False)
+
+    # VAE Optimizers
+    vae_g_optimizer = keras.optimizers.Adam()
+    vae_f_optimizer = keras.optimizers.Adam()
+
+    # Cycle-GAN Architecture
+    generator_g = pix2pix.unet_generator(OUTPUT_CHANNELS, norm_type='instancenorm')
+    generator_f = pix2pix.unet_generator(OUTPUT_CHANNELS, norm_type='instancenorm')
+    
+    discriminator_x = pix2pix.discriminator(norm_type='instancenorm', target=False)
+    discriminator_y = pix2pix.discriminator(norm_type='instancenorm', target=False)
+    
+    # Optimizers
+    generator_g_optimizer = tf.keras.optimizers.Adam(2e-4, beta_1=0.5)
+    generator_f_optimizer = tf.keras.optimizers.Adam(2e-4, beta_1=0.5)
+    
+    discriminator_x_optimizer = tf.keras.optimizers.Adam(2e-4, beta_1=0.5)
+    discriminator_y_optimizer = tf.keras.optimizers.Adam(2e-4, beta_1=0.5)
+
+    # checkpoint = tf.train.Checkpoint(optimizer=optimizer, model=model)
+
+# Define a train_step without @tf.function
+def train_step(data):
+    # real_x: dog image
+    # real_y: cat image
+    real_x, real_y = data
+
+    # persistent is set to True because the tape is used more than
+    # once to calculate the gradients.
+    with tf.GradientTape(persistent=True) as tape:
+        # VAE Operations
+        
+        # VAE generates intermediate representation of outputs
+        # VAE G generates X -> X'
+        vae_g_x = vae_g.encoder_model(real_x)
+        vae_g_z, vae_g_z_mean, vae_g_z_log_var = vae_g.sampler_model(vae_g_x)
+        vae_g_y = vae_g.decoder_model(vae_g_z)
+        # VAE F generates Y -> Y'
+        vae_f_y = vae_f.encoder_model(real_y)
+        vae_f_z, vae_f_z_mean, vae_f_z_log_var = vae_f.sampler_model(vae_f_y)
+        vae_f_x = vae_f.decoder_model(vae_f_z)
+
+        # VAE G Loss
+        vae_g_r_loss = vae_g.r_loss_factor * vae_g.mae(real_y, vae_g_y)
+        vae_g_kl_loss = -0.5 * (1 + vae_g_z_log_var - tf.square(vae_g_z_mean) - tf.exp(vae_g_z_log_var))
+        vae_g_kl_loss = tf.reduce_mean(tf.reduce_sum(vae_g_kl_loss, axis=1))
+        vae_g_total_loss = vae_g_r_loss + vae_g_kl_loss
+        # VAE F Loss
+        vae_f_r_loss = vae_f.r_loss_factor * vae_f.mae(real_x, vae_f_x)
+        vae_f_kl_loss = -0.5 * (1 + vae_f_z_log_var - tf.square(vae_f_z_mean) - tf.exp(vae_f_z_log_var))
+        vae_f_kl_loss = tf.reduce_mean(tf.reduce_sum(vae_f_kl_loss, axis=1))
+        vae_f_total_loss = vae_f_r_loss + vae_f_kl_loss
+
+        # Cycle-GAN Operations
+        # Generator G translates X' -> Y
+        # Generator F translates Y' -> X.
+        # Here we use the intermediate representation of cats and dogs generated by the VAE
+        fake_y = generator_g(vae_g_y, training=True) # vae_g_y instead of real_x
+        cycled_x = generator_f(fake_y, training=True)
+
+        fake_x = generator_f(vae_f_x, training=True) # vae_f_x instead of real_y
+        cycled_y = generator_g(fake_x, training=True)
+
+        # same_x and same_y are used for identity loss.
+        same_x = generator_f(real_x, training=True)
+        same_y = generator_g(real_y, training=True)
+
+        disc_real_x = discriminator_x(real_x, training=True)
+        disc_real_y = discriminator_y(real_y, training=True)
+
+        disc_fake_x = discriminator_x(fake_x, training=True)
+        disc_fake_y = discriminator_y(fake_y, training=True)
+
+        # calculate the loss
+        gen_g_loss = generator_loss(loss_obj, disc_fake_y)
+        gen_f_loss = generator_loss(loss_obj, disc_fake_x)
+
+        total_cycle_loss = calc_cycle_loss(real_x, cycled_x) + calc_cycle_loss(real_y, cycled_y)
+
+        # Total generator loss = adversarial loss + cycle loss
+        total_gen_g_loss = gen_g_loss + total_cycle_loss + identity_loss(real_y, same_y)
+        total_gen_f_loss = gen_f_loss + total_cycle_loss + identity_loss(real_x, same_x)
+
+        disc_x_loss = discriminator_loss(loss_obj, disc_real_x, disc_fake_x)
+        disc_y_loss = discriminator_loss(loss_obj, disc_real_y, disc_fake_y)
+
+    # VAE Gradients
+    vae_g_gradients = tape.gradient(vae_g_total_loss, vae_g.trainable_weights)
+    vae_f_gradients = tape.gradient(vae_f_total_loss, vae_f.trainable_weights)
+
+    # VAE optimizer step
+    vae_g_optimizer.apply_gradients(zip(vae_g_gradients, vae_g.trainable_weights))
+    vae_f_optimizer.apply_gradients(zip(vae_f_gradients, vae_f.trainable_weights))
+
+    # Calculate the gradients for generator and discriminator
+    generator_g_gradients = tape.gradient(total_gen_g_loss,
+                                          generator_g.trainable_variables)
+    generator_f_gradients = tape.gradient(total_gen_f_loss,
+                                          generator_f.trainable_variables)
+
+    discriminator_x_gradients = tape.gradient(disc_x_loss,
+                                              discriminator_x.trainable_variables)
+    discriminator_y_gradients = tape.gradient(disc_y_loss,
+                                              discriminator_y.trainable_variables)
+
+    # Apply the gradients to the optimizer
+    generator_g_optimizer.apply_gradients(zip(generator_g_gradients,
+                                              generator_g.trainable_variables))
+
+    generator_f_optimizer.apply_gradients(zip(generator_f_gradients,
+                                              generator_f.trainable_variables))
+
+    discriminator_x_optimizer.apply_gradients(zip(discriminator_x_gradients,
+                                                  discriminator_x.trainable_variables))
+
+    discriminator_y_optimizer.apply_gradients(zip(discriminator_y_gradients,
+                                                  discriminator_y.trainable_variables))
+
+    # compute progress
+    # vae
+    vae_g_total_loss_tracker.update_state(vae_g_total_loss)
+    vae_g_reconstruction_loss_tracker.update_state(vae_g_r_loss)
+    vae_g_kl_loss_tracker.update_state(vae_g_kl_loss)
+    vae_f_total_loss_tracker.update_state(vae_f_total_loss)
+    vae_f_reconstruction_loss_tracker.update_state(vae_f_r_loss)
+    vae_f_kl_loss_tracker.update_state(vae_f_kl_loss)
+    # cycle-gan
+    total_cycle_loss_tracker.update_state(total_cycle_loss)
+    total_gen_g_loss_tracker.update_state(total_gen_g_loss)
+    total_gen_f_loss_tracker.update_state(total_gen_f_loss)
+    disc_x_loss_tracker.update_state(disc_x_loss)
+    disc_y_loss_tracker.update_state(disc_y_loss)
+    return {
+        "vae_g_loss": vae_g_total_loss_tracker.result(),
+        "vae_g_reconstruction_loss": vae_g_reconstruction_loss_tracker.result(),
+        "vae_g_kl_loss": vae_g_kl_loss_tracker.result(),
+        "vae_f_loss": vae_f_total_loss_tracker.result(),
+        "vae_f_reconstruction_loss": vae_f_reconstruction_loss_tracker.result(),
+        "vae_f_kl_loss": vae_f_kl_loss_tracker.result(),
+        "total_cycle_loss": total_cycle_loss_tracker.result(),
+        "total_gen_g_loss": total_gen_g_loss_tracker.result(),
+        "total_gen_f_loss": total_gen_f_loss_tracker.result(),
+        "disc_x_loss": disc_x_loss_tracker.result(),
+        "disc_y_loss": disc_y_loss_tracker.result()
+    }
+
+# `run` replicates the provided computation and runs it with the distributed input.
+@tf.function
+def distributed_train_step(dist_inputs):
+    per_replica_losses = mirrored_strategy.run(train_step, args=(dist_inputs,))
+    return mirrored_strategy.reduce(tf.distribute.ReduceOp.SUM, per_replica_losses, axis=None)
+
+to_cat = generator_g(sample_dog)
+to_dog = generator_f(sample_cat)
 plt.figure(figsize=(8, 8))
 contrast = 8
 
@@ -649,36 +653,57 @@ plt.savefig('figure_4.png')
 print("Model builded")
 
 # Checkpoints
-from tensorflow.keras.callbacks import ModelCheckpoint
-from tensorflow.keras.callbacks import TerminateOnNaN
-filepath = 'best_weight_model.h5'
-checkpoint = ModelCheckpoint(filepath=filepath,
-                             monitor='loss',
-                             verbose=1,
-                             save_best_only=True,
-                             save_weights_only=True,
-                             mode='min')
-terminate = TerminateOnNaN()
-callbacks = [checkpoint, terminate]
+# from tensorflow.keras.callbacks import ModelCheckpoint
+# from tensorflow.keras.callbacks import TerminateOnNaN
+# filepath = 'best_weight_model.h5'
+# checkpoint = ModelCheckpoint(filepath=filepath,
+#                              monitor='loss',
+#                              verbose=1,
+#                              save_best_only=True,
+#                              save_weights_only=True,
+#                              mode='min')
+# terminate = TerminateOnNaN()
+# callbacks = [checkpoint, terminate]
 
 # Train
-train_dataset = tf.data.Dataset.from_tensor_slices((train_images, train_labels)).shuffle(BUFFER_SIZE).batch(GLOBAL_BATCH_SIZE)
-test_dataset = tf.data.Dataset.from_tensor_slices((test_images, test_labels)).batch(GLOBAL_BATCH_SIZE)
+# train_dataset = tf.data.Dataset.from_tensor_slices((train_images, train_labels)).shuffle(BUFFER_SIZE).batch(GLOBAL_BATCH_SIZE)
+# test_dataset = tf.data.Dataset.from_tensor_slices((test_images, test_labels)).batch(GLOBAL_BATCH_SIZE)
 
-train_dist_dataset = strategy.experimental_distribute_dataset(train_dataset)
-test_dist_dataset = strategy.experimental_distribute_dataset(test_dataset)
+# train_dist_dataset = strategy.experimental_distribute_dataset(train_dataset)
+# test_dist_dataset = strategy.experimental_distribute_dataset(test_dataset)
 
 train_dataset = tf.data.Dataset.zip((train_dogs, train_cats))
 dist_dataset = mirrored_strategy.experimental_distribute_dataset(train_dataset)
-cyclegan.compile()
-cyclegan.fit(dist_dataset,
-             batch_size      = BATCH_SIZE,
-             epochs          = EPOCHS,
-             # initial_epoch   = 0,
-             # steps_per_epoch = steps_per_epoch,
-             callbacks       = callbacks)
-#cyclegan.save_weights("model_vae_cycle_gan.h5")
 
+for epoch in range(EPOCHS):
+  # TRAIN LOOP
+  total_loss = 0.0
+  num_batches = 0
+  for x in dist_dataset:
+    total_loss += distributed_train_step(x)
+    num_batches += 1
+  train_loss = total_loss / num_batches
+
+  # if epoch % 2 == 0:
+  #   checkpoint.save(checkpoint_prefix)
+
+  template = ("Epoch {}, "
+              "vae_g_loss: {}, vae_g_reconstruction_loss: {}, vae_g_kl_loss: {}, "
+              "vae_f_loss: {}, vae_f_reconstruction_loss: {}, vae_f_kl_loss: {}, "
+              "total_cycle_loss: {}, total_gen_g_loss: {}, total_gen_f_loss: {}, "
+              "disc_x_loss: {}, disc_y_loss: {}")
+  print(template.format(epoch + 1,
+                        vae_g_total_loss_tracker.result(),
+                        vae_g_reconstruction_loss_tracker.result(),
+                        vae_g_kl_loss_tracker.result(),
+                        vae_f_total_loss_tracker.result(),
+                        vae_f_reconstruction_loss_tracker.result(),
+                        vae_f_kl_loss_tracker.result(),
+                        total_cycle_loss_tracker.result(),
+                        total_gen_g_loss_tracker.result(),
+                        total_gen_f_loss_tracker.result(),
+                        disc_x_loss_tracker.result(),
+                        disc_y_loss_tracker.result()))
 
 def generate_images(model, test_input, figname):
     prediction = model(test_input)
@@ -697,8 +722,8 @@ def generate_images(model, test_input, figname):
     plt.savefig(figname)
 
 # Run the trained model on the test dataset
-for idx, inp in enumerate(train_dogs.take(5)):
-  generate_images(cyclegan.generator_g, inp, f"testdogimage_{idx+1}")
+# for idx, inp in enumerate(train_dogs.take(5)):
+#   generate_images(cyclegan.generator_g, inp, f"testdogimage_{idx+1}")
 
-for idx, inp in enumerate(train_cats.take(5)):
-  generate_images(cyclegan.generator_f, inp, f"testcatimage_{idx+1}")
+# for idx, inp in enumerate(train_cats.take(5)):
+#   generate_images(cyclegan.generator_f, inp, f"testcatimage_{idx+1}")
