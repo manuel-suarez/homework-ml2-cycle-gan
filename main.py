@@ -677,12 +677,10 @@ dist_dataset = mirrored_strategy.experimental_distribute_dataset(train_dataset)
 
 for epoch in range(EPOCHS):
   # TRAIN LOOP
-  total_loss = 0.0
   num_batches = 0
   for x in dist_dataset:
-    total_loss += distributed_train_step(x)
+    distributed_train_step(x)
     num_batches += 1
-  train_loss = total_loss / num_batches
 
   # if epoch % 2 == 0:
   #   checkpoint.save(checkpoint_prefix)
