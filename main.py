@@ -94,13 +94,13 @@ train_dogs = tf.data.Dataset.list_files(dog_files, shuffle=False)
 train_dogs = train_dogs.map(load_image, num_parallel_calls=tf.data.AUTOTUNE)
 train_dogs = train_dogs.cache().map(
     preprocess_image_train, num_parallel_calls=AUTOTUNE).shuffle(
-    BUFFER_SIZE).batch(BATCH_SIZE)
+    BUFFER_SIZE).batch(BATCH_SIZE).repeat()
 
 train_cats = tf.data.Dataset.list_files(cat_files, shuffle=False)
 train_cats = train_cats.map(load_image, num_parallel_calls=tf.data.AUTOTUNE)
 train_cats = train_cats.cache().map(
     preprocess_image_train, num_parallel_calls=AUTOTUNE).shuffle(
-    BUFFER_SIZE).batch(BATCH_SIZE)
+    BUFFER_SIZE).batch(BATCH_SIZE).repeat()
 
 sample_dog = next(iter(train_dogs))
 sample_cat = next(iter(train_cats))
@@ -657,8 +657,8 @@ cyclegan.compile()
 cyclegan.fit(train_dataset,
              batch_size      = GLOBAL_BATCH_SIZE,
              epochs          = EPOCHS,
-             initial_epoch   = 0,
-             steps_per_epoch = steps_per_epoch,
+             # initial_epoch   = 0,
+             # steps_per_epoch = steps_per_epoch,
              callbacks       = callbacks)
 #cyclegan.save_weights("model_vae_cycle_gan.h5")
 
