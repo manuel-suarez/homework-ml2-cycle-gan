@@ -513,12 +513,12 @@ def train_step(data):
         vae_f_x = vae_f.decoder_model(vae_f_z)
 
         # VAE G Loss
-        vae_g_r_loss = vae_g.r_loss_factor * vae_g.mae(real_y, vae_g_y)
+        vae_g_r_loss = vae_g.r_loss_factor * vae_g_loss(real_y, vae_g_y)
         vae_g_kl_loss = -0.5 * (1 + vae_g_z_log_var - tf.square(vae_g_z_mean) - tf.exp(vae_g_z_log_var))
         vae_g_kl_loss = tf.reduce_mean(tf.reduce_sum(vae_g_kl_loss, axis=1))
         vae_g_total_loss = vae_g_r_loss + vae_g_kl_loss
         # VAE F Loss
-        vae_f_r_loss = vae_f.r_loss_factor * vae_f.mae(real_x, vae_f_x)
+        vae_f_r_loss = vae_f.r_loss_factor * vae_f_loss(real_x, vae_f_x)
         vae_f_kl_loss = -0.5 * (1 + vae_f_z_log_var - tf.square(vae_f_z_mean) - tf.exp(vae_f_z_log_var))
         vae_f_kl_loss = tf.reduce_mean(tf.reduce_sum(vae_f_kl_loss, axis=1))
         vae_f_total_loss = vae_f_r_loss + vae_f_kl_loss
