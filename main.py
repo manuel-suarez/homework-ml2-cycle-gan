@@ -283,11 +283,12 @@ info("Model builded")
 
 # train_dist_dataset = strategy.experimental_distribute_dataset(train_dataset)
 # test_dist_dataset = strategy.experimental_distribute_dataset(test_dataset)
-
+info("Train dataset")
 train_dataset = tf.data.Dataset.zip((train_dogs, train_cats))
+info("Distributed dataset")
 dist_dataset = mirrored_strategy.experimental_distribute_dataset(train_dataset)
 
-print("Training")
+info("Training")
 for epoch in range(EPOCHS):
   # TRAIN LOOP
   num_batches = 0
