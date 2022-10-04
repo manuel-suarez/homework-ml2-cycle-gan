@@ -13,6 +13,11 @@ AUTOTUNE = tf.data.AUTOTUNE
 
 print(tf.__version__)
 
+# Execution strategy
+mirrored_strategy = tf.distribute.MirroredStrategy()
+# Check GPU execution
+tf.debugging.set_log_device_placement(True)
+
 # Input pipeline
 DATA_FOLDER   = '/home/est_posgrado_manuel.suarez/data/dogs-vs-cats/train'
 dog_files = np.array(glob(os.path.join(DATA_FOLDER, 'dog.*.jpg')))
@@ -24,8 +29,7 @@ IMG_WIDTH = 256
 IMG_HEIGHT = 256
 
 n_images        = dog_files.shape[0]
-# steps_per_epoch = n_images//BATCH_SIZE
-steps_per_epoch = 100
+steps_per_epoch = n_images//BATCH_SIZE
 print('num image files : ', n_images)
 print('steps per epoch : ', steps_per_epoch )
 
@@ -295,7 +299,7 @@ class VAE(keras.Model):
         self.total_loss_tracker = tf.keras.metrics.Mean(name="total_loss")
         self.reconstruction_loss_tracker = tf.keras.metrics.Mean(name="reconstruction_loss")
         self.kl_loss_tracker = tf.keras.metrics.Mean(name="kl_loss")
-        self.mae = tf.keras.losses.MeanAbsoluteError()
+        self.mae = tf.keras.losses.MeanAbsoluteError(reduction=tf.keras.losses.Reduction.NONE)
 
         # Encoder
         self.encoder_model = Encoder(input_dim=self.input_dim,
@@ -332,7 +336,6 @@ class VAE(keras.Model):
                 self.reconstruction_loss_tracker,
                 self.kl_loss_tracker, ]
 
-    @tf.function
     def train_step(self, data):
         dog_img = data[0]
         cat_img = data[1]
@@ -433,8 +436,8 @@ class CycleGAN(keras.Model):
         self.vae_f_optimizer = keras.optimizers.Adam()
 
         # VAE Loss
-        self.vae_g_loss = tf.keras.losses.MeanAbsoluteError()
-        self.vae_f_loss = tf.keras.losses.MeanAbsoluteError()
+        self.vae_g_loss = tf.keras.losses.MeanAbsoluteError(reduction=tf.keras.losses.Reduction.NONE)
+        self.vae_f_loss = tf.keras.losses.MeanAbsoluteError(reduction=tf.keras.losses.Reduction.NONE)
 
         # VAE Metrics
         self.vae_g_total_loss_tracker = tf.keras.metrics.Mean(name="vae_g_total_loss")
@@ -459,7 +462,7 @@ class CycleGAN(keras.Model):
         self.discriminator_y_optimizer = tf.keras.optimizers.Adam(2e-4, beta_1=0.5)
 
         # Loss
-        self.loss_obj = tf.keras.losses.BinaryCrossentropy(from_logits=True)
+        self.loss_obj = tf.keras.losses.BinaryCrossentropy(reduction=tf.keras.losses.Reduction.NONE, from_logits=True)
 
         # Cycle-GAN Metrics
         self.total_cycle_loss_tracker = tf.keras.metrics.Mean(name="total_cycle_loss")
@@ -470,7 +473,6 @@ class CycleGAN(keras.Model):
 
         self.built = True
 
-    @tf.function
     def train_step(self, data):
         # persistent is set to True because the tape is used more than
         # once to calculate the gradients.
@@ -595,7 +597,8 @@ class CycleGAN(keras.Model):
             "disc_y_loss": self.disc_y_loss_tracker.result()
         }
 
-cyclegan = CycleGAN(p_lambda=LAMBDA, r_loss_factor=R_LOSS_FACTOR)
+with mirrored_strategy.scope():
+    cyclegan = CycleGAN(p_lambda=LAMBDA, r_loss_factor=R_LOSS_FACTOR)
 to_cat = cyclegan.generator_g(sample_dog)
 to_dog = cyclegan.generator_f(sample_cat)
 plt.figure(figsize=(8, 8))
@@ -640,7 +643,7 @@ terminate = TerminateOnNaN()
 callbacks = [checkpoint, terminate]
 
 # Training
-EPOCHS = 50
+EPOCHS = 20
 
 # Train
 train_dataset = tf.data.Dataset.zip((train_dogs, train_cats))
