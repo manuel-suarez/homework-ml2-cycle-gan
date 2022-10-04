@@ -71,16 +71,16 @@ def build_data(data_folder, global_batch_size):
     BUFFER_SIZE = len(dog_files)
 
     train_dogs = tf.data.Dataset.list_files(dog_files, shuffle=False)
-    train_dogs = train_dogs.map(load_image, num_parallel_calls=tf.data.AUTOTUNE)
-    train_dogs = train_dogs.cache().map(
-        preprocess_image_train, num_parallel_calls=AUTOTUNE).shuffle(
-        BUFFER_SIZE).batch(global_batch_size)
+    train_dogs = train_dogs.map(load_image, num_parallel_calls=tf.data.AUTOTUNE).batch(global_batch_size)
+    #train_dogs = train_dogs.cache().map(
+    #    preprocess_image_train, num_parallel_calls=AUTOTUNE).shuffle(
+    #    BUFFER_SIZE).batch(global_batch_size)
 
     train_cats = tf.data.Dataset.list_files(cat_files, shuffle=False)
-    train_cats = train_cats.map(load_image, num_parallel_calls=tf.data.AUTOTUNE)
-    train_cats = train_cats.cache().map(
-        preprocess_image_train, num_parallel_calls=AUTOTUNE).shuffle(
-        BUFFER_SIZE).batch(global_batch_size)
+    train_cats = train_cats.map(load_image, num_parallel_calls=tf.data.AUTOTUNE).batch(global_batch_size)
+    #train_cats = train_cats.cache().map(
+    #    preprocess_image_train, num_parallel_calls=AUTOTUNE).shuffle(
+    #    BUFFER_SIZE).batch(global_batch_size)
 
     return train_dogs, train_cats, BUFFER_SIZE
 

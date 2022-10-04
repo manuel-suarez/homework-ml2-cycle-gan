@@ -7,11 +7,11 @@ tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.INFO)
 info(f"TensorFlow version: {tf.__version__}")
 info(f"Num GPUs Available: {len(tf.config.list_physical_devices('GPU'))}")
 
-configproto = tf.compat.v1.ConfigProto()
-configproto.gpu_options.allow_growth = True
-configproto.gpu_options.polling_inactive_delay_msecs = 10
-sess = tf.compat.v1.Session(config=configproto)
-tf.compat.v1.keras.backend.set_session(sess)
+#configproto = tf.compat.v1.ConfigProto()
+#configproto.gpu_options.allow_growth = True
+#configproto.gpu_options.polling_inactive_delay_msecs = 10
+#sess = tf.compat.v1.Session(config=configproto)
+#tf.compat.v1.keras.backend.set_session(sess)
 
 from tensorflow import keras
 from tensorflow_examples.models.pix2pix import pix2pix
