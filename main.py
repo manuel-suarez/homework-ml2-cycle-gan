@@ -31,7 +31,7 @@ info('Number of devices for distributed strategy: {}'.format(mirrored_strategy.n
 BATCH_SIZE_PER_REPLICA = 1
 GLOBAL_BATCH_SIZE = BATCH_SIZE_PER_REPLICA * mirrored_strategy.num_replicas_in_sync
 
-DATA_FOLDER = '/home/est_posgrado_manuel.suarez/data/dogs-vs-cats/train'
+DATA_FOLDER = '/home/est_posgrado_manuel.suarez/data/dogs-vs-cats/train5000'
 train_dataset, BUFFER_SIZE = build_data(DATA_FOLDER, global_batch_size=GLOBAL_BATCH_SIZE)
 sample_dog, sample_cat = generate_figure1(train_dataset)
 
