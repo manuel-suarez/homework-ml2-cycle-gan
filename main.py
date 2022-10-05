@@ -14,7 +14,7 @@ AUTOTUNE = tf.data.AUTOTUNE
 print(tf.__version__)
 
 # Input pipeline
-DATA_FOLDER   = '/home/est_posgrado_manuel.suarez/data/dogs-vs-cats/train'
+DATA_FOLDER   = '/home/est_posgrado_manuel.suarez/data/dogs-vs-cats/train5000'
 dog_files = np.array(glob(os.path.join(DATA_FOLDER, 'dog.*.jpg')))
 cat_files = np.array(glob(os.path.join(DATA_FOLDER, 'cat.*.jpg')))
 
