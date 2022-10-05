@@ -584,21 +584,7 @@ class CycleGAN(keras.Model):
         self.disc_y_loss_tracker.update_state(disc_y_loss)
 
         # save figure to see progress
-        to_cat = self.generator_g(sample_dog, training=False)
-        to_dog = self.generator_f(sample_cat, training=False)
-        plt.figure(figsize=(8, 8))
-        contrast = 8
-        imgs = [sample_dog, to_cat, sample_cat, to_dog]
-        title = ['Dog', 'To Cat', 'Cat', 'To Dog']
-
-        for i in range(len(imgs)):
-            plt.subplot(2, 2, i + 1)
-            plt.title(title[i])
-            if i % 2 == 0:
-                plt.imshow(imgs[i][0] * 0.5 + 0.5)
-            else:
-                plt.imshow(imgs[i][0] * 0.5 * contrast + 0.5)
-        plt.savefig(f"training_step_{self.training_step}.png")
+        generate_images(self.generator_g, sample_dog, f"training_step_{self.training_step}.png")
 
         return {
             "vae_g_loss": self.vae_g_total_loss_tracker.result(),
@@ -613,6 +599,22 @@ class CycleGAN(keras.Model):
             "disc_x_loss": self.disc_x_loss_tracker.result(),
             "disc_y_loss": self.disc_y_loss_tracker.result()
         }
+
+def generate_images(model, test_input, figname):
+    prediction = model(test_input)
+
+    plt.figure(figsize=(12, 12))
+
+    display_list = [test_input[0], prediction[0]]
+    title = ['Input Image', 'Predicted Image']
+
+    for i in range(2):
+        plt.subplot(1, 2, i + 1)
+        plt.title(title[i])
+        # getting the pixel values between [0, 1] to plot it.
+        plt.imshow(display_list[i] * 0.5 + 0.5)
+        plt.axis('off')
+    plt.savefig(figname)
 
 cyclegan = CycleGAN(p_lambda=LAMBDA, r_loss_factor=R_LOSS_FACTOR)
 to_cat = cyclegan.generator_g(sample_dog)
@@ -671,23 +673,6 @@ cyclegan.fit(train_dataset,
              steps_per_epoch = steps_per_epoch,
              callbacks       = callbacks)
 #cyclegan.save_weights("model_vae_cycle_gan.h5")
-
-
-def generate_images(model, test_input, figname):
-    prediction = model(test_input)
-
-    plt.figure(figsize=(12, 12))
-
-    display_list = [test_input[0], prediction[0]]
-    title = ['Input Image', 'Predicted Image']
-
-    for i in range(2):
-        plt.subplot(1, 2, i + 1)
-        plt.title(title[i])
-        # getting the pixel values between [0, 1] to plot it.
-        plt.imshow(display_list[i] * 0.5 + 0.5)
-        plt.axis('off')
-    plt.savefig(figname)
 
 # Run the trained model on the test dataset
 for idx, inp in enumerate(train_dogs.take(5)):
