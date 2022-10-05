@@ -467,12 +467,12 @@ class CycleGAN(keras.Model):
         self.disc_x_loss_tracker = tf.keras.metrics.Mean(name="disc_x_loss")
         self.disc_y_loss_tracker = tf.keras.metrics.Mean(name="disc_y_loss")
 
-        self.train_step = 0
+        self.training_step = 0
         self.built = True
 
     @tf.function
     def train_step(self, data):
-        self.train_step += 1
+        self.training_step += 1
         # persistent is set to True because the tape is used more than
         # once to calculate the gradients.
         # real_x: dog image
@@ -594,7 +594,7 @@ class CycleGAN(keras.Model):
                 plt.imshow(imgs[i][0] * 0.5 + 0.5)
             else:
                 plt.imshow(imgs[i][0] * 0.5 * contrast + 0.5)
-        plt.savefig(f"train_step_{self.train_step}.png")
+        plt.savefig(f"training_step_{self.training_step}.png")
 
         return {
             "vae_g_loss": self.vae_g_total_loss_tracker.result(),
