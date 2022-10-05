@@ -1,5 +1,6 @@
 # Setup the pipeline
 import tensorflow as tf
+import time
 # tf.debugging.set_log_device_placement(True)
 info = tf.compat.v1.logging.info
 # Especificamos nivel de logging para verificar la estrategia distribuida
@@ -264,9 +265,7 @@ def train_step(data):
 info("Distributed train step")
 @tf.function
 def distributed_train_step(dist_inputs):
-    info("Train step")
     mirrored_strategy.run(train_step, args=(dist_inputs,))
-    info("Finished train step")
     # return mirrored_strategy.reduce(tf.distribute.ReduceOp.SUM, per_replica_losses, axis=None)
 
 # generate_sample(train_dogs, train_cats, generator_g, generator_f, discriminator_x, discriminator_y)
@@ -298,33 +297,33 @@ dist_dataset = mirrored_strategy.experimental_distribute_dataset(train_dataset)
 
 info("Training")
 for epoch in range(EPOCHS):
-  # TRAIN LOOP
-  num_batches = 0
-  for x in dist_dataset:
-      info(f"Step {num_batches}")
-      distributed_train_step(x)
-      num_batches += 1
+    print("\nStart of epoch %d" % (epoch,))
+    start_time = time.time()
+    # TRAIN LOOP
+    for step, data in enumerate(dist_dataset):
+      distributed_train_step(data)
 
-  # if epoch % 2 == 0:
-  #   checkpoint.save(checkpoint_prefix)
+      # if epoch % 2 == 0:
+      #   checkpoint.save(checkpoint_prefix)
 
-  template = ("Epoch {}, "
-              "vae_g_loss: {}, vae_g_reconstruction_loss: {}, vae_g_kl_loss: {}, "
-              "vae_f_loss: {}, vae_f_reconstruction_loss: {}, vae_f_kl_loss: {}, "
-              "total_cycle_loss: {}, total_gen_g_loss: {}, total_gen_f_loss: {}, "
-              "disc_x_loss: {}, disc_y_loss: {}")
-  info(template.format(epoch + 1,
-                        vae_g_total_loss_tracker.result(),
-                        vae_g_reconstruction_loss_tracker.result(),
-                        vae_g_kl_loss_tracker.result(),
-                        vae_f_total_loss_tracker.result(),
-                        vae_f_reconstruction_loss_tracker.result(),
-                        vae_f_kl_loss_tracker.result(),
-                        total_cycle_loss_tracker.result(),
-                        total_gen_g_loss_tracker.result(),
-                        total_gen_f_loss_tracker.result(),
-                        disc_x_loss_tracker.result(),
-                        disc_y_loss_tracker.result()))
+      info("Time taken: %.2fs" % (time.time() - start_time))
+      template = ("Epoch {}, "
+                  "vae_g_loss: {}, vae_g_reconstruction_loss: {}, vae_g_kl_loss: {}, "
+                  "vae_f_loss: {}, vae_f_reconstruction_loss: {}, vae_f_kl_loss: {}, "
+                  "total_cycle_loss: {}, total_gen_g_loss: {}, total_gen_f_loss: {}, "
+                  "disc_x_loss: {}, disc_y_loss: {}")
+      info(template.format(epoch + 1,
+                            vae_g_total_loss_tracker.result(),
+                            vae_g_reconstruction_loss_tracker.result(),
+                            vae_g_kl_loss_tracker.result(),
+                            vae_f_total_loss_tracker.result(),
+                            vae_f_reconstruction_loss_tracker.result(),
+                            vae_f_kl_loss_tracker.result(),
+                            total_cycle_loss_tracker.result(),
+                            total_gen_g_loss_tracker.result(),
+                            total_gen_f_loss_tracker.result(),
+                            disc_x_loss_tracker.result(),
+                            disc_y_loss_tracker.result()))
 
 def generate_images(model, test_input, figname):
     prediction = model(test_input)
