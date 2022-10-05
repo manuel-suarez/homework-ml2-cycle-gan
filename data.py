@@ -91,9 +91,8 @@ def build_data(data_folder, global_batch_size):
 
     return train_dataset, BUFFER_SIZE
 
-def generate_figure_1_2(train_dogs, train_cats):
-    sample_dog = next(iter(train_dogs))
-    sample_cat = next(iter(train_cats))
+def generate_figure1(train_dataset):
+    sample_dog, sample_cat = next(iter(train_dataset))
 
     plt.subplot(121)
     plt.title('Dog')
@@ -117,10 +116,9 @@ def generate_figure_1_2(train_dogs, train_cats):
     print("Plotting cat")
     plt.savefig('figure_2.png')
 
-def generate_sample(train_dogs, train_cats, generator_g, generator_f, discriminator_x, discriminator_y):
-    sample_dog = next(iter(train_dogs))
-    sample_cat = next(iter(train_cats))
+    return sample_dog, sample_cat
 
+def generate_figure2(epoch, sample_dog, sample_cat, generator_g, generator_f, discriminator_x, discriminator_y):
     to_cat = generator_g(sample_dog)
     to_dog = generator_f(sample_cat)
     plt.figure(figsize=(8, 8))
@@ -136,7 +134,7 @@ def generate_sample(train_dogs, train_cats, generator_g, generator_f, discrimina
             plt.imshow(imgs[i][0] * 0.5 + 0.5)
         else:
             plt.imshow(imgs[i][0] * 0.5 * contrast + 0.5)
-    plt.savefig('figure_3.png')
+    plt.savefig(f"figure_generator_epoch_{epoch}.png")
 
     plt.figure(figsize=(8, 8))
 
@@ -148,4 +146,4 @@ def generate_sample(train_dogs, train_cats, generator_g, generator_f, discrimina
     plt.title('Is a real dog?')
     plt.imshow(discriminator_x(sample_dog)[0, ..., -1], cmap='RdBu_r')
 
-    plt.savefig('figure_4.png')
+    plt.savefig(f"figure_discriminator_epoch_{epoch}.png")

@@ -20,7 +20,7 @@ from tensorflow_examples.models.pix2pix import pix2pix
 import matplotlib.pyplot as plt
 
 from models import VAE
-from data import build_data, generate_figure_1_2, generate_sample
+from data import build_data, generate_figure1, generate_figure2
 
 # Execution strategy
 mirrored_strategy = tf.distribute.MirroredStrategy()
@@ -32,7 +32,7 @@ GLOBAL_BATCH_SIZE = BATCH_SIZE_PER_REPLICA * mirrored_strategy.num_replicas_in_s
 
 DATA_FOLDER = '/home/est_posgrado_manuel.suarez/data/dogs-vs-cats/train'
 train_dataset, BUFFER_SIZE = build_data(DATA_FOLDER, global_batch_size=GLOBAL_BATCH_SIZE)
-# generate_figure_1_2(train_dogs, train_cats)
+sample_dog, sample_cat = generate_figure1(train_dataset)
 
 IMG_WIDTH = 256
 IMG_HEIGHT = 256
@@ -44,7 +44,7 @@ LAMBDA = 10
 R_LOSS_FACTOR = 10000
 
 
-EPOCHS = 2
+EPOCHS = 5
 
 steps_per_epoch = BUFFER_SIZE//BATCH_SIZE_PER_REPLICA
 info(f"num image files : {BUFFER_SIZE}")
@@ -268,7 +268,7 @@ def distributed_train_step(dist_inputs):
     mirrored_strategy.run(train_step, args=(dist_inputs,))
     # return mirrored_strategy.reduce(tf.distribute.ReduceOp.SUM, per_replica_losses, axis=None)
 
-# generate_sample(train_dogs, train_cats, generator_g, generator_f, discriminator_x, discriminator_y)
+generate_figure2(sample_dog, sample_cat, generator_g, generator_f, discriminator_x, discriminator_y)
 info("Model builded")
 
 # Checkpoints
@@ -306,24 +306,27 @@ for epoch in range(EPOCHS):
       # if epoch % 2 == 0:
       #   checkpoint.save(checkpoint_prefix)
 
-      info("Time taken: %.2fs" % (time.time() - start_time))
-      template = ("Epoch {}, "
-                  "vae_g_loss: {}, vae_g_reconstruction_loss: {}, vae_g_kl_loss: {}, "
-                  "vae_f_loss: {}, vae_f_reconstruction_loss: {}, vae_f_kl_loss: {}, "
-                  "total_cycle_loss: {}, total_gen_g_loss: {}, total_gen_f_loss: {}, "
-                  "disc_x_loss: {}, disc_y_loss: {}")
-      info(template.format(epoch + 1,
-                            vae_g_total_loss_tracker.result(),
-                            vae_g_reconstruction_loss_tracker.result(),
-                            vae_g_kl_loss_tracker.result(),
-                            vae_f_total_loss_tracker.result(),
-                            vae_f_reconstruction_loss_tracker.result(),
-                            vae_f_kl_loss_tracker.result(),
-                            total_cycle_loss_tracker.result(),
-                            total_gen_g_loss_tracker.result(),
-                            total_gen_f_loss_tracker.result(),
-                            disc_x_loss_tracker.result(),
-                            disc_y_loss_tracker.result()))
+    info("Time taken: %.2fs" % (time.time() - start_time))
+    template = ("Epoch {}, "
+              "vae_g_loss: {}, vae_g_reconstruction_loss: {}, vae_g_kl_loss: {}, "
+              "vae_f_loss: {}, vae_f_reconstruction_loss: {}, vae_f_kl_loss: {}, "
+              "total_cycle_loss: {}, total_gen_g_loss: {}, total_gen_f_loss: {}, "
+              "disc_x_loss: {}, disc_y_loss: {}")
+    info(template.format(epoch + 1,
+                        vae_g_total_loss_tracker.result(),
+                        vae_g_reconstruction_loss_tracker.result(),
+                        vae_g_kl_loss_tracker.result(),
+                        vae_f_total_loss_tracker.result(),
+                        vae_f_reconstruction_loss_tracker.result(),
+                        vae_f_kl_loss_tracker.result(),
+                        total_cycle_loss_tracker.result(),
+                        total_gen_g_loss_tracker.result(),
+                        total_gen_f_loss_tracker.result(),
+                        disc_x_loss_tracker.result(),
+                        disc_y_loss_tracker.result()))
+
+    # Generamos imagen para observar desempeño de la red
+    generate_figure2(epoch, sample_dog, sample_cat, generator_g, generator_f, discriminator_x, discriminator_y)
 
 def generate_images(model, test_input, figname):
     prediction = model(test_input)
