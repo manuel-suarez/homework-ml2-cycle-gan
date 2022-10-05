@@ -44,7 +44,7 @@ LAMBDA = 10
 R_LOSS_FACTOR = 10000
 
 
-EPOCHS = 5
+EPOCHS = 50
 
 steps_per_epoch = BUFFER_SIZE//BATCH_SIZE_PER_REPLICA
 info(f"num image files : {BUFFER_SIZE}")
