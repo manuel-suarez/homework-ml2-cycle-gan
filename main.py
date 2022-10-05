@@ -44,7 +44,7 @@ LAMBDA = 10
 R_LOSS_FACTOR = 10000
 
 
-EPOCHS = 50
+EPOCHS = 30
 
 steps_per_epoch = BUFFER_SIZE//BATCH_SIZE_PER_REPLICA
 info(f"num image files : {BUFFER_SIZE}")
@@ -120,11 +120,11 @@ with mirrored_strategy.scope():
     vae_f_optimizer = keras.optimizers.Adam()
 
     # Cycle-GAN Architecture
-    generator_g = pix2pix.unet_generator(OUTPUT_CHANNELS, norm_type='instancenorm')
-    generator_f = pix2pix.unet_generator(OUTPUT_CHANNELS, norm_type='instancenorm')
+    generator_g = pix2pix.unet_generator(OUTPUT_CHANNELS, norm_type='batchnorm')
+    generator_f = pix2pix.unet_generator(OUTPUT_CHANNELS, norm_type='batchnorm')
     
-    discriminator_x = pix2pix.discriminator(norm_type='instancenorm', target=False)
-    discriminator_y = pix2pix.discriminator(norm_type='instancenorm', target=False)
+    discriminator_x = pix2pix.discriminator(norm_type='batchnorm', target=False)
+    discriminator_y = pix2pix.discriminator(norm_type='batchnorm', target=False)
     
     # Optimizers
     generator_g_optimizer = tf.keras.optimizers.Adam(2e-4, beta_1=0.5)
