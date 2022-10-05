@@ -16,6 +16,7 @@ info(f"Num GPUs Available: {len(tf.config.list_physical_devices('GPU'))}")
 
 from tensorflow import keras
 from tensorflow_examples.models.pix2pix import pix2pix
+from tensorflow_examples.models.pix2pix.pix2pix import InstanceNormalization
 
 import matplotlib.pyplot as plt
 
@@ -27,7 +28,7 @@ mirrored_strategy = tf.distribute.MirroredStrategy()
 info('Number of devices for distributed strategy: {}'.format(mirrored_strategy.num_replicas_in_sync))
 # Check GPU execution
 
-BATCH_SIZE_PER_REPLICA = 24
+BATCH_SIZE_PER_REPLICA = 1
 GLOBAL_BATCH_SIZE = BATCH_SIZE_PER_REPLICA * mirrored_strategy.num_replicas_in_sync
 
 DATA_FOLDER = '/home/est_posgrado_manuel.suarez/data/dogs-vs-cats/train'
