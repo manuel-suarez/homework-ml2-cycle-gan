@@ -268,7 +268,7 @@ def distributed_train_step(dist_inputs):
     mirrored_strategy.run(train_step, args=(dist_inputs,))
     # return mirrored_strategy.reduce(tf.distribute.ReduceOp.SUM, per_replica_losses, axis=None)
 
-generate_figure2(sample_dog, sample_cat, generator_g, generator_f, discriminator_x, discriminator_y)
+generate_figure2(0, sample_dog, sample_cat, generator_g, generator_f, discriminator_x, discriminator_y)
 info("Model builded")
 
 # Checkpoints
@@ -326,7 +326,7 @@ for epoch in range(EPOCHS):
                         disc_y_loss_tracker.result()))
 
     # Generamos imagen para observar desempeño de la red
-    generate_figure2(epoch, sample_dog, sample_cat, generator_g, generator_f, discriminator_x, discriminator_y)
+    generate_figure2(epoch + 1, sample_dog, sample_cat, generator_g, generator_f, discriminator_x, discriminator_y)
 
 def generate_images(model, test_input, figname):
     prediction = model(test_input)
