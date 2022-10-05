@@ -27,7 +27,7 @@ mirrored_strategy = tf.distribute.MirroredStrategy()
 info('Number of devices for distributed strategy: {}'.format(mirrored_strategy.num_replicas_in_sync))
 # Check GPU execution
 
-BATCH_SIZE_PER_REPLICA = 12
+BATCH_SIZE_PER_REPLICA = 24
 GLOBAL_BATCH_SIZE = BATCH_SIZE_PER_REPLICA * mirrored_strategy.num_replicas_in_sync
 
 DATA_FOLDER = '/home/est_posgrado_manuel.suarez/data/dogs-vs-cats/train'
