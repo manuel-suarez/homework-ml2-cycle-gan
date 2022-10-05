@@ -584,8 +584,8 @@ class CycleGAN(keras.Model):
         self.disc_y_loss_tracker.update_state(disc_y_loss)
 
         # save figure to see progress
-        to_cat = self.generator_g(sample_dog)
-        to_dog = self.generator_f(sample_cat)
+        to_cat = self.generator_g(sample_dog, Training=False)
+        to_dog = self.generator_f(sample_cat, Training=False)
         plt.figure(figsize=(8, 8))
         contrast = 8
         imgs = [sample_dog, to_cat, sample_cat, to_dog]
