@@ -640,7 +640,7 @@ terminate = TerminateOnNaN()
 callbacks = [checkpoint, terminate]
 
 # Training
-EPOCHS = 50
+EPOCHS = 10
 
 # Train
 train_dataset = tf.data.Dataset.zip((train_dogs, train_cats))
