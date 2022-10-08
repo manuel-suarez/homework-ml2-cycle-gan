@@ -24,8 +24,7 @@ IMG_WIDTH = 256
 IMG_HEIGHT = 256
 
 n_images        = dog_files.shape[0]
-# steps_per_epoch = n_images//BATCH_SIZE
-steps_per_epoch = 100
+steps_per_epoch = n_images//BATCH_SIZE
 print('num image files : ', n_images)
 print('steps per epoch : ', steps_per_epoch )
 
